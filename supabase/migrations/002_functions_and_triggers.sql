@@ -38,7 +38,37 @@ CREATE POLICY "Hosts can update their own properties"
 ON public.properties FOR UPDATE
 USING (auth.uid() = host_id);
 
--- 3. BOOKINGS POLICIES
+-- 3. PROPERTY IMAGES POLICIES
+CREATE POLICY "Property images are viewable by everyone"
+ON public.property_images FOR SELECT
+USING (true);
+
+CREATE POLICY "Hosts can manage their property images"
+ON public.property_images FOR ALL
+USING (
+  EXISTS (
+    SELECT 1 FROM public.properties p
+    WHERE p.id = property_images.property_id
+    AND p.host_id = auth.uid()
+  )
+);
+
+-- 4. PROPERTY AVAILABILITY POLICIES
+CREATE POLICY "Availability calendar viewable by everyone"
+ON public.property_availability FOR SELECT
+USING (true);
+
+CREATE POLICY "Hosts can manage their property availability"
+ON public.property_availability FOR ALL
+USING (
+  EXISTS (
+    SELECT 1 FROM public.properties p
+    WHERE p.id = property_availability.property_id
+    AND p.host_id = auth.uid()
+  )
+);
+
+-- 5. BOOKINGS POLICIES
 CREATE POLICY "Users can view bookings where they are guest or host"
 ON public.bookings FOR SELECT
 USING (auth.uid() = guest_id OR auth.uid() = host_id);
@@ -47,7 +77,7 @@ CREATE POLICY "Guests can create booking requests"
 ON public.bookings FOR INSERT
 WITH CHECK (auth.uid() = guest_id);
 
--- 4. CREDIT ACCOUNTS & TRANSACTIONS POLICIES
+-- 6. CREDIT ACCOUNTS & TRANSACTIONS POLICIES
 CREATE POLICY "Users can view own credit account"
 ON public.credit_accounts FOR SELECT
 USING (auth.uid() = user_id);
@@ -56,7 +86,21 @@ CREATE POLICY "Users can view own credit transactions"
 ON public.credit_transactions FOR SELECT
 USING (auth.uid() = user_id);
 
--- 5. MESSAGES POLICIES
+CREATE POLICY "Users can view own credit reservations"
+ON public.credit_reservations FOR SELECT
+USING (auth.uid() = user_id);
+
+-- 7. CONVERSATIONS & MESSAGES POLICIES
+CREATE POLICY "Conversation members can view conversations"
+ON public.conversations FOR SELECT
+USING (
+  EXISTS (
+    SELECT 1 FROM public.conversation_members cm
+    WHERE cm.conversation_id = conversations.id
+    AND cm.user_id = auth.uid()
+  )
+);
+
 CREATE POLICY "Conversation members can view messages"
 ON public.messages FOR SELECT
 USING (
@@ -77,6 +121,78 @@ WITH CHECK (
     AND cm.user_id = auth.uid()
   )
 );
+
+-- 8. NOTIFICATIONS POLICIES
+CREATE POLICY "Users can view own notifications"
+ON public.notifications FOR SELECT
+USING (auth.uid() = user_id);
+
+CREATE POLICY "Users can mark own notifications read"
+ON public.notifications FOR UPDATE
+USING (auth.uid() = user_id);
+
+-- 9. REVIEWS POLICIES
+CREATE POLICY "Published reviews are viewable by everyone"
+ON public.reviews FOR SELECT
+USING (moderation_status = 'published');
+
+CREATE POLICY "Guests can submit reviews for completed stays"
+ON public.reviews FOR INSERT
+WITH CHECK (auth.uid() = reviewer_id);
+
+-- 10. USER VERIFICATIONS & AUDIT LOGS POLICIES
+CREATE POLICY "Users can view own verification status, admins can view all"
+ON public.user_verifications FOR SELECT
+USING (
+  auth.uid() = user_id OR
+  EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND role = 'admin')
+);
+
+CREATE POLICY "Admins can view audit logs"
+ON public.audit_logs FOR SELECT
+USING (
+  EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND role = 'admin')
+);
+
+-- ======================================================================
+-- AUTOMATIC USER REGISTRATION TRIGGER (Supabase auth.users -> profiles)
+-- ======================================================================
+
+CREATE OR REPLACE FUNCTION public.handle_new_user()
+RETURNS trigger AS $$
+BEGIN
+  INSERT INTO public.profiles (id, email, full_name, city, country, role)
+  VALUES (
+    new.id,
+    new.email,
+    COALESCE(new.raw_user_meta_data->>'full_name', 'Member'),
+    COALESCE(new.raw_user_meta_data->>'city', 'India'),
+    COALESCE(new.raw_user_meta_data->>'country', 'India'),
+    'member'
+  )
+  ON CONFLICT (id) DO NOTHING;
+
+  INSERT INTO public.credit_accounts (user_id, available_balance, lifetime_earned)
+  VALUES (new.id, 150, 150)
+  ON CONFLICT (user_id) DO NOTHING;
+
+  INSERT INTO public.credit_transactions (
+    user_id, transaction_type, amount, balance_after, status, description, reference_code
+  ) VALUES (
+    new.id, 'welcome_bonus', 150, 150, 'completed',
+    'Welcome bonus upon registration',
+    'WEL-' || substr(md5(random()::text || clock_timestamp()::text), 1, 10)
+  );
+
+  RETURN new;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+-- Drop trigger if exists and recreate
+DROP TRIGGER IF EXISTS on_auth_user_created ON auth.users;
+CREATE TRIGGER on_auth_user_created
+  AFTER INSERT ON auth.users
+  FOR EACH ROW EXECUTE FUNCTION public.handle_new_user();
 
 -- ======================================================================
 -- ATOMIC STORED PROCEDURES (TRANSACTION-SAFE)
