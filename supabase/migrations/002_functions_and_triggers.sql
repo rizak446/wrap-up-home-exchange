@@ -1,20 +1,34 @@
 -- HavenSwap Database Functions, Triggers, and Row-Level-Security (RLS) Policies
 
--- ENABLE ROW LEVEL SECURITY
+-- ENABLE ROW LEVEL SECURITY ACROSS ALL 28 ENTITIES
 ALTER TABLE public.profiles ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.user_roles ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.user_verifications ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.amenities ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.properties ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.property_images ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.property_amenities ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.property_availability ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.property_verifications ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.bookings ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.booking_guests ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.credit_accounts ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.credit_transactions ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.credit_reservations ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.subscription_plans ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.subscriptions ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.payment_records ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.conversations ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.conversation_members ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.messages ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.notifications ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.reviews ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.user_verifications ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.user_reports ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.support_tickets ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.audit_logs ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.platform_settings ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.legal_document_versions ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.consent_records ENABLE ROW LEVEL SECURITY;
 
 -- 1. PROFILES POLICIES
 CREATE POLICY "Public profiles are viewable by everyone"
@@ -153,6 +167,90 @@ ON public.audit_logs FOR SELECT
 USING (
   EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND role = 'admin')
 );
+
+-- 11. CATALOG & REFERENCE DATA POLICIES
+CREATE POLICY "Amenities are viewable by everyone"
+ON public.amenities FOR SELECT
+USING (true);
+
+CREATE POLICY "Property amenities are viewable by everyone"
+ON public.property_amenities FOR SELECT
+USING (true);
+
+CREATE POLICY "Subscription plans are viewable by everyone"
+ON public.subscription_plans FOR SELECT
+USING (true);
+
+CREATE POLICY "Legal document versions are viewable by everyone"
+ON public.legal_document_versions FOR SELECT
+USING (true);
+
+CREATE POLICY "Platform settings are viewable by everyone"
+ON public.platform_settings FOR SELECT
+USING (true);
+
+-- 12. SUBSCRIPTIONS & PAYMENTS POLICIES
+CREATE POLICY "Users can view own subscriptions"
+ON public.subscriptions FOR SELECT
+USING (auth.uid() = user_id);
+
+CREATE POLICY "Users can view own payment records"
+ON public.payment_records FOR SELECT
+USING (auth.uid() = user_id);
+
+-- 13. USER ROLES & PROPERTY VERIFICATIONS
+CREATE POLICY "Users can view own roles"
+ON public.user_roles FOR SELECT
+USING (auth.uid() = user_id OR EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND role = 'admin'));
+
+CREATE POLICY "Hosts can view own property verifications"
+ON public.property_verifications FOR SELECT
+USING (
+  EXISTS (
+    SELECT 1 FROM public.properties p
+    WHERE p.id = property_verifications.property_id
+    AND p.host_id = auth.uid()
+  ) OR EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND role = 'admin')
+);
+
+-- 14. BOOKING GUESTS & CONVERSATION MEMBERS
+CREATE POLICY "Booking participants can view booking guests"
+ON public.booking_guests FOR SELECT
+USING (
+  EXISTS (
+    SELECT 1 FROM public.bookings b
+    WHERE b.id = booking_guests.booking_id
+    AND (b.guest_id = auth.uid() OR b.host_id = auth.uid())
+  )
+);
+
+CREATE POLICY "Conversation members can view members"
+ON public.conversation_members FOR SELECT
+USING (
+  auth.uid() = user_id OR
+  EXISTS (
+    SELECT 1 FROM public.conversation_members cm
+    WHERE cm.conversation_id = conversation_members.conversation_id
+    AND cm.user_id = auth.uid()
+  )
+);
+
+-- 15. REPORTS, TICKETS & CONSENT RECORDS
+CREATE POLICY "Users can view and create own reports"
+ON public.user_reports FOR ALL
+USING (auth.uid() = reporter_id OR EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND role = 'admin'))
+WITH CHECK (auth.uid() = reporter_id);
+
+CREATE POLICY "Users can view and create own support tickets"
+ON public.support_tickets FOR ALL
+USING (auth.uid() = user_id OR EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND role = 'admin'))
+WITH CHECK (auth.uid() = user_id);
+
+CREATE POLICY "Users can view and record own consent"
+ON public.consent_records FOR ALL
+USING (auth.uid() = user_id)
+WITH CHECK (auth.uid() = user_id);
+
 
 -- ======================================================================
 -- AUTOMATIC USER REGISTRATION TRIGGER (Supabase auth.users -> profiles)
