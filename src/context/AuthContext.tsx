@@ -12,6 +12,12 @@ interface AuthContextType {
   isDemoUser: boolean;
   loginAs: (userId: string) => Promise<void>;
   loginWithEmail: (email: string, password?: string) => Promise<{ success: boolean; error?: string }>;
+  sendOtp: (email: string) => Promise<{ success: boolean; error?: string }>;
+  verifyOtp: (
+    email: string,
+    token: string,
+    type?: "signup" | "email"
+  ) => Promise<{ success: boolean; error?: string }>;
   registerUser: (data: {
     fullName: string;
     email: string;
@@ -188,6 +194,115 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     setIsLoading(false);
     return { success: false, error: "No account found with these credentials" };
+  };
+
+  const sendOtp = async (
+    email: string
+  ): Promise<{ success: boolean; error?: string }> => {
+    setIsLoading(true);
+    try {
+      const supabase = createClient();
+      const { error } = await supabase.auth.signInWithOtp({
+        email: email.trim(),
+        options: {
+          shouldCreateUser: false,
+        },
+      });
+
+      if (error) {
+        setIsLoading(false);
+        if (
+          error.message?.includes("rate limit") ||
+          (error as any).code === "over_email_send_rate_limit"
+        ) {
+          return {
+            success: false,
+            error:
+              "Supabase email rate limit exceeded (maximum 3-4 emails/hour on free tier). Please sign in using your password.",
+          };
+        }
+        return { success: false, error: error.message };
+      }
+
+      setIsLoading(false);
+      return { success: true };
+    } catch (e: any) {
+      setIsLoading(false);
+      return { success: false, error: e.message || "Failed to send OTP" };
+    }
+  };
+
+  const verifyOtp = async (
+    email: string,
+    token: string,
+    type: "signup" | "email" = "email"
+  ): Promise<{ success: boolean; error?: string }> => {
+    setIsLoading(true);
+    try {
+      const supabase = createClient();
+
+      let { data, error } = await supabase.auth.verifyOtp({
+        email: email.trim(),
+        token: token.trim(),
+        type: type,
+      });
+
+      if (error && type === "email") {
+        const retry = await supabase.auth.verifyOtp({
+          email: email.trim(),
+          token: token.trim(),
+          type: "signup",
+        });
+        if (!retry.error && retry.data?.user) {
+          data = retry.data;
+          error = null;
+        }
+      }
+
+      if (error) {
+        setIsLoading(false);
+        return { success: false, error: error.message || "Invalid or expired OTP code" };
+      }
+
+      if (data?.user) {
+        const { data: profile } = await supabase
+          .from("profiles")
+          .select("*")
+          .eq("id", data.user.id)
+          .maybeSingle();
+
+        const activeProfile: UserProfile = profile || {
+          id: data.user.id,
+          email: data.user.email || email,
+          full_name: data.user.user_metadata?.full_name || email.split("@")[0],
+          country: "India",
+          city: data.user.user_metadata?.city || "India",
+          avatar_url:
+            "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=200",
+          identity_verified: false,
+          property_verified: false,
+          role: "member",
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        };
+
+        if (typeof window !== "undefined") {
+          localStorage.setItem("haven_current_user", JSON.stringify(activeProfile));
+        }
+
+        setCurrentUser(activeProfile);
+        setIsDemoUser(false);
+        await fetchCredits(data.user.id);
+        setIsLoading(false);
+        return { success: true };
+      }
+    } catch (e: any) {
+      setIsLoading(false);
+      return { success: false, error: e.message || "OTP verification failed" };
+    }
+
+    setIsLoading(false);
+    return { success: false, error: "OTP verification could not be completed" };
   };
 
   const registerUser = async (data: {
@@ -387,6 +502,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         isDemoUser,
         loginAs,
         loginWithEmail,
+        sendOtp,
+        verifyOtp,
         registerUser,
         updateProfile,
         logout,
