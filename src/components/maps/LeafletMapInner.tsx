@@ -39,11 +39,11 @@ export default function LeafletMapInner({
         scrollWheelZoom: false,
       });
 
-      // CartoDB Positron tiles for a sleek, premium, elegant travel map look
+      // Standard OpenStreetMap tiles - 100% free with no API key required
       L.tileLayer(
-        "https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png",
+        "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
         {
-          attribution: '&copy; <a href="https://carto.com/">CARTO</a> &copy; OpenStreetMap',
+          attribution: '&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer">OpenStreetMap</a> contributors',
           maxZoom: 19,
         }
       ).addTo(map);
