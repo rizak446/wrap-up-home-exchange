@@ -23,6 +23,8 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import PropertyMap from "@/components/maps/PropertyMap";
 
+const POPULAR_DESTINATIONS = ["Goa", "Jaipur", "Bhopal", "Bengaluru"];
+
 function ExploreHomesContent() {
   const searchParams = useSearchParams();
   const initialCity = searchParams.get("city") || "";
@@ -35,6 +37,7 @@ function ExploreHomesContent() {
 
   // Filters
   const [city, setCity] = useState(initialCity);
+  const [debouncedCity, setDebouncedCity] = useState(initialCity);
   const [guests, setGuests] = useState(initialGuests);
   const [minCredits, setMinCredits] = useState<number>(0);
   const [maxCredits, setMaxCredits] = useState<number>(200);
@@ -42,11 +45,46 @@ function ExploreHomesContent() {
   const [verifiedOnly, setVerifiedOnly] = useState<boolean>(false);
   const [sortBy, setSortBy] = useState<"relevance" | "price_asc" | "price_desc" | "newest">("relevance");
 
+  // Keep city in sync if URL search param changes
+  useEffect(() => {
+    if (initialCity && initialCity !== city) {
+      setCity(initialCity);
+    }
+  }, [initialCity]);
+
+  // Debounce search input for instant, smooth typing
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedCity(city);
+    }, 250);
+    return () => clearTimeout(timer);
+  }, [city]);
+
+  const handleResetFilters = () => {
+    setCity("");
+    setGuests(1);
+    setPropertyType("all");
+    setVerifiedOnly(false);
+    setMinCredits(0);
+    setMaxCredits(200);
+    setSortBy("relevance");
+  };
+
+  const hasActiveFilters = Boolean(
+    city.trim() !== "" ||
+    guests > 1 ||
+    propertyType !== "all" ||
+    verifiedOnly ||
+    minCredits > 0 ||
+    maxCredits < 200 ||
+    sortBy !== "relevance"
+  );
+
   const fetchHomes = async () => {
     setIsLoading(true);
     try {
       const params = new URLSearchParams();
-      if (city.trim()) params.set("city", city.trim());
+      if (debouncedCity.trim()) params.set("city", debouncedCity.trim());
       if (guests > 1) params.set("guests", guests.toString());
       if (minCredits > 0) params.set("minCredits", minCredits.toString());
       if (maxCredits < 200) params.set("maxCredits", maxCredits.toString());
@@ -68,7 +106,7 @@ function ExploreHomesContent() {
 
   useEffect(() => {
     fetchHomes();
-  }, [city, guests, minCredits, maxCredits, propertyType, verifiedOnly, sortBy]);
+  }, [debouncedCity, guests, minCredits, maxCredits, propertyType, verifiedOnly, sortBy]);
 
   return (
     <div className="min-h-screen bg-slate-50/60 pb-16">
@@ -179,14 +217,64 @@ function ExploreHomesContent() {
 
       {/* CONTENT AREA */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-6">
-        <div className="mb-4 flex items-center justify-between text-xs text-slate-500">
-          <span>
-            Showing <strong className="text-navy-950">{properties.length}</strong> verified homes
-            {city && <span> in "{city}"</span>}
-          </span>
-          <span className="text-[11px] text-teal-700 bg-teal-50 px-2.5 py-1 rounded-full font-medium">
-            Approximate locations displayed for host privacy
-          </span>
+        {/* SUB-HEADER / ACTIVE SEARCH CONTROLS */}
+        <div className="mb-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs text-slate-500">
+          <div className="flex items-center gap-2 flex-wrap">
+            <span>
+              Showing <strong className="text-navy-950 font-bold">{properties.length}</strong> verified {properties.length === 1 ? "home" : "homes"}
+              {debouncedCity && <span> in <strong className="text-teal-700 font-bold">"{debouncedCity}"</strong></span>}
+            </span>
+            {hasActiveFilters && (
+              <button
+                onClick={handleResetFilters}
+                className="text-[11px] text-slate-400 hover:text-rose-600 font-medium underline transition-colors ml-1 cursor-pointer"
+              >
+                Clear all filters
+              </button>
+            )}
+          </div>
+
+          {/* Right Side: Active Search Badges & Interactive Controls */}
+          <div className="flex flex-wrap items-center gap-2">
+            {city.trim() ? (
+              <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-teal-50 text-teal-900 border border-teal-200 text-xs font-semibold shadow-xs">
+                <MapPin className="h-3.5 w-3.5 text-teal-600" />
+                <span>{city}</span>
+                <button
+                  onClick={() => setCity("")}
+                  className="ml-1 p-0.5 rounded-full hover:bg-teal-200/70 text-teal-700 hover:text-teal-950 transition-colors cursor-pointer"
+                  title="Remove city filter"
+                >
+                  <X className="h-3 w-3" />
+                </button>
+              </div>
+            ) : (
+              <div className="hidden sm:flex items-center gap-1.5 text-xs">
+                <span className="text-slate-400 font-medium text-[11px]">Popular:</span>
+                {POPULAR_DESTINATIONS.map((dest) => (
+                  <button
+                    key={dest}
+                    onClick={() => setCity(dest)}
+                    className="px-2.5 py-0.5 rounded-full bg-slate-100 hover:bg-teal-50 hover:text-teal-700 hover:border-teal-200 text-slate-600 text-[11px] font-semibold border border-slate-200 transition-all cursor-pointer"
+                  >
+                    {dest}
+                  </button>
+                ))}
+              </div>
+            )}
+
+            {/* Live map pin indicator with discreet host privacy shield */}
+            <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-white border border-slate-200 text-slate-600 text-[11px] font-medium shadow-xs">
+              <span className={`w-2 h-2 rounded-full ${properties.length > 0 ? "bg-emerald-500 animate-pulse" : "bg-slate-300"}`} />
+              <span>{properties.length} on map</span>
+              <span
+                className="text-slate-400 hover:text-teal-600 cursor-help ml-0.5 inline-flex items-center"
+                title="Exact street addresses are protected for host privacy until booking is confirmed"
+              >
+                <ShieldCheck className="h-3.5 w-3.5 text-teal-600" />
+              </span>
+            </div>
+          </div>
         </div>
 
         {/* LAYOUT CONTAINER */}
@@ -220,18 +308,33 @@ function ExploreHomesContent() {
                   <MapPin className="h-10 w-10 text-slate-300 mx-auto mb-3" />
                   <h3 className="text-lg font-bold text-navy-950">No verified homes match your criteria</h3>
                   <p className="text-sm text-slate-500 mt-1 max-w-sm mx-auto">
-                    Try clearing destination keywords, expanding guest capacity, or resetting filters to view all listings.
+                    {city
+                      ? `We couldn't find any homes in "${city}". Explore our popular destinations or reset your search.`
+                      : "Try clearing destination keywords, expanding guest capacity, or resetting filters to view all listings."}
                   </p>
+                  <div className="flex flex-wrap justify-center gap-2 mt-4">
+                    {POPULAR_DESTINATIONS.map((dest) => (
+                      <Button
+                        key={dest}
+                        variant="outline"
+                        size="sm"
+                        onClick={() => {
+                          setCity(dest);
+                          setGuests(1);
+                          setPropertyType("all");
+                          setVerifiedOnly(false);
+                        }}
+                        className="rounded-full text-xs hover:border-teal-400 hover:text-teal-700"
+                      >
+                        Explore {dest}
+                      </Button>
+                    ))}
+                  </div>
                   <Button
-                    variant="outline"
+                    variant="ghost"
                     size="sm"
-                    className="mt-4"
-                    onClick={() => {
-                      setCity("");
-                      setGuests(1);
-                      setPropertyType("all");
-                      setVerifiedOnly(false);
-                    }}
+                    className="mt-3 text-slate-500 hover:text-navy-950 cursor-pointer"
+                    onClick={handleResetFilters}
                   >
                     Reset All Filters
                   </Button>
@@ -333,7 +436,7 @@ function ExploreHomesContent() {
                 viewMode === "split"
                   ? "lg:col-span-5 sticky top-36 h-[600px]"
                   : "col-span-full h-[750px]"
-              }`}
+              } relative`}
             >
               <PropertyMap
                 properties={properties}
@@ -341,6 +444,49 @@ function ExploreHomesContent() {
                 onSelectProperty={(id) => setSelectedPropertyId(id)}
                 height="100%"
               />
+
+              {/* Floating Map Status Overlay */}
+              <div className="absolute top-4 left-4 z-[400] bg-white/95 backdrop-blur-md px-3 py-1.5 rounded-xl shadow-md border border-slate-200 text-xs font-semibold text-navy-950 flex items-center gap-2 pointer-events-auto">
+                <span className={`w-2 h-2 rounded-full ${properties.length > 0 ? "bg-teal-500 animate-pulse" : "bg-slate-300"}`}></span>
+                <span>
+                  {properties.length} {properties.length === 1 ? "home" : "homes"} mapped
+                  {city ? ` in ${city}` : ""}
+                </span>
+              </div>
+
+              {/* Empty state overlay on map when search yields 0 results */}
+              {properties.length === 0 && !isLoading && (
+                <div className="absolute inset-0 bg-slate-900/30 backdrop-blur-[2px] flex items-center justify-center p-6 z-[500] rounded-2xl pointer-events-none">
+                  <div className="bg-white/95 backdrop-blur-md p-6 rounded-2xl shadow-luxury text-center max-w-xs border border-slate-200 pointer-events-auto">
+                    <div className="w-11 h-11 rounded-full bg-teal-50 text-teal-600 flex items-center justify-center mx-auto mb-2.5">
+                      <MapPin className="h-5 w-5 text-teal-600" />
+                    </div>
+                    <h4 className="font-bold text-navy-950 text-sm">No map markers found</h4>
+                    <p className="text-xs text-slate-500 mt-1 leading-relaxed">
+                      {city
+                        ? `No verified homes found in "${city}". Try another destination:`
+                        : "No homes match these active filters."}
+                    </p>
+                    <div className="flex flex-wrap justify-center gap-1.5 mt-3">
+                      {POPULAR_DESTINATIONS.map((dest) => (
+                        <button
+                          key={dest}
+                          onClick={() => setCity(dest)}
+                          className="px-2.5 py-1 rounded-lg bg-teal-50 hover:bg-teal-100 text-teal-800 text-xs font-semibold transition-colors cursor-pointer"
+                        >
+                          {dest}
+                        </button>
+                      ))}
+                    </div>
+                    <button
+                      onClick={handleResetFilters}
+                      className="mt-3 text-xs text-slate-500 hover:text-navy-950 underline font-medium block mx-auto transition-colors cursor-pointer"
+                    >
+                      Reset all filters
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
           )}
         </div>
