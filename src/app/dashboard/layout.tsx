@@ -25,6 +25,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
   const links = [
     { label: "Overview", href: "/dashboard", icon: LayoutDashboard },
+    { label: "Profile & Photo", href: "/dashboard/profile", icon: User },
     { label: "My Homes", href: "/dashboard/my-homes", icon: Home },
     { label: "Add a Home", href: "/dashboard/add-home", icon: PlusCircle },
     { label: "Hosting Requests", href: "/dashboard/hosting", icon: CalendarCheck },
@@ -40,20 +41,31 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       {/* Sidebar (Desktop) */}
       <aside className="hidden md:flex flex-col w-64 bg-white border-r border-slate-200/80 p-4 sticky top-20 h-[calc(100vh-5rem)]">
         {/* User Card */}
-        <div className="p-3.5 rounded-2xl bg-slate-50 border border-slate-200/70 mb-4 flex items-center gap-3">
-          <img
-            src={currentUser?.avatar_url || "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100"}
-            alt=""
-            className="h-10 w-10 rounded-full object-cover ring-2 ring-teal-500"
-          />
-          <div className="overflow-hidden">
-            <h4 className="font-bold text-xs text-navy-950 truncate">{currentUser?.full_name || "Member"}</h4>
+        <Link
+          href="/dashboard/profile"
+          className="p-3.5 rounded-2xl bg-slate-50 hover:bg-teal-50/40 border border-slate-200/70 hover:border-teal-300 transition-all mb-4 flex items-center gap-3 group cursor-pointer"
+          title="Click to view & edit your profile"
+        >
+          <div className="relative">
+            <img
+              src={currentUser?.avatar_url || "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100"}
+              alt=""
+              className="h-10 w-10 rounded-full object-cover ring-2 ring-teal-500 group-hover:scale-105 transition-transform"
+            />
+            <span className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 bg-teal-600 rounded-full border-2 border-white flex items-center justify-center text-[8px] text-white">
+              ✎
+            </span>
+          </div>
+          <div className="overflow-hidden flex-1">
+            <h4 className="font-bold text-xs text-navy-950 truncate group-hover:text-teal-800 transition-colors">
+              {currentUser?.full_name || "Member"}
+            </h4>
             <div className="text-[11px] text-teal-700 font-bold flex items-center gap-1">
               <Coins className="h-3 w-3 text-teal-600" />
               <span>{creditAccount?.available_balance ?? 350} pts</span>
             </div>
           </div>
-        </div>
+        </Link>
 
         {/* Navigation Items */}
         <nav className="flex-1 space-y-1 overflow-y-auto">

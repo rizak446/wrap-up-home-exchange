@@ -88,54 +88,6 @@ export default function Navbar() {
               </Button>
             </Link>
 
-            {/* Quick Demo Role Switcher */}
-            <div className="relative">
-              <button
-                onClick={() => setRoleSwitcherOpen(!roleSwitcherOpen)}
-                className="px-2.5 py-1.5 rounded-lg text-xs font-semibold bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-300 flex items-center gap-1.5 transition-colors"
-                title="Switch persona for demonstration"
-              >
-                <span className="h-2 w-2 rounded-full bg-teal-500 animate-pulse"></span>
-                <span>Persona: <strong className="text-navy-950">{currentUser?.full_name?.split(" ")[0]}</strong></span>
-              </button>
-
-              {roleSwitcherOpen && (
-                <div className="absolute right-0 mt-2 w-64 rounded-2xl bg-white p-2 shadow-xl border border-slate-200 z-50 text-xs">
-                  <div className="px-2 py-1.5 font-bold text-slate-400 uppercase tracking-wider text-[10px]">
-                    Switch Demo Persona
-                  </div>
-                  <button
-                    onClick={() => { loginAs("user-traveler-arjun"); setRoleSwitcherOpen(false); }}
-                    className="w-full text-left px-3 py-2 rounded-xl hover:bg-slate-50 flex flex-col gap-0.5"
-                  >
-                    <span className="font-bold text-slate-900">Arjun Verma (Bhopal)</span>
-                    <span className="text-[11px] text-teal-600">Traveler with 350 pts booking Goa</span>
-                  </button>
-                  <button
-                    onClick={() => { loginAs("user-goa-alisha"); setRoleSwitcherOpen(false); }}
-                    className="w-full text-left px-3 py-2 rounded-xl hover:bg-slate-50 flex flex-col gap-0.5"
-                  >
-                    <span className="font-bold text-slate-900">Alisha Fernandes (Goa)</span>
-                    <span className="text-[11px] text-teal-600">Host of Candolim Beach Villa</span>
-                  </button>
-                  <button
-                    onClick={() => { loginAs("user-bhopal-rajesh"); setRoleSwitcherOpen(false); }}
-                    className="w-full text-left px-3 py-2 rounded-xl hover:bg-slate-50 flex flex-col gap-0.5"
-                  >
-                    <span className="font-bold text-slate-900">Rajesh Sharma (Bhopal)</span>
-                    <span className="text-[11px] text-teal-600">Host of Upper Lake Villa</span>
-                  </button>
-                  <button
-                    onClick={() => { loginAs("user-admin-sarah"); setRoleSwitcherOpen(false); }}
-                    className="w-full text-left px-3 py-2 rounded-xl hover:bg-slate-50 flex flex-col gap-0.5 border-t border-slate-100"
-                  >
-                    <span className="font-bold text-rose-700">Sarah Matthews (Admin)</span>
-                    <span className="text-[11px] text-slate-500">Platform Moderation & Security</span>
-                  </button>
-                </div>
-              )}
-            </div>
-
             {currentUser ? (
               <div className="flex items-center gap-2">
                 {/* Credit Wallet Pill */}
@@ -157,32 +109,57 @@ export default function Navbar() {
                   <span className="absolute top-1.5 right-1.5 h-2 w-2 rounded-full bg-rose-500"></span>
                 </Link>
 
-                {/* User Dropdown */}
+                {/* User Profile Dropdown */}
                 <div className="relative">
                   <button
                     onClick={() => setUserDropdownOpen(!userDropdownOpen)}
-                    className="flex items-center gap-2 p-1.5 pl-2.5 rounded-full border border-slate-300 hover:border-slate-400 transition-all bg-white"
+                    className="flex items-center gap-2 p-1.5 pl-2.5 rounded-full border border-slate-300 hover:border-slate-400 transition-all bg-white cursor-pointer"
                   >
-                    <span className="text-xs font-bold text-slate-800">{currentUser.full_name.split(" ")[0]}</span>
+                    <span className="text-xs font-bold text-slate-800">
+                      {currentUser.full_name?.split(" ")[0] || "Member"}
+                    </span>
                     <img
-                      src={currentUser.avatar_url || "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100"}
-                      alt={currentUser.full_name}
-                      className="h-7 w-7 rounded-full object-cover ring-1 ring-teal-500"
+                      src={
+                        currentUser.avatar_url ||
+                        "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100"
+                      }
+                      alt={currentUser.full_name || "Profile"}
+                      className="h-7 w-7 rounded-full object-cover ring-2 ring-teal-500"
                     />
                   </button>
 
                   {userDropdownOpen && (
-                    <div className="absolute right-0 mt-2 w-56 rounded-2xl bg-white p-2 shadow-xl border border-slate-200 z-50 text-sm">
-                      <div className="px-3 py-2 border-b border-slate-100 mb-1">
-                        <p className="font-bold text-navy-950 truncate">{currentUser.full_name}</p>
-                        <p className="text-xs text-slate-500 truncate">{currentUser.email}</p>
-                        {currentUser.identity_verified && (
-                          <div className="mt-1 flex items-center gap-1 text-[11px] text-teal-600 font-semibold">
-                            <CheckCircle2 className="h-3.5 w-3.5" />
-                            <span>Verified Member</span>
-                          </div>
-                        )}
+                    <div className="absolute right-0 mt-2 w-64 rounded-2xl bg-white p-2 shadow-2xl border border-slate-200 z-50 text-xs">
+                      {/* User Summary Header */}
+                      <div className="px-3 py-2.5 border-b border-slate-100 mb-1 bg-slate-50/70 rounded-xl">
+                        <p className="font-bold text-navy-950 truncate text-sm">
+                          {currentUser.full_name}
+                        </p>
+                        <p className="text-[11px] text-slate-500 truncate">
+                          {currentUser.email}
+                        </p>
+                        <div className="mt-1 flex items-center justify-between text-[11px]">
+                          <span className="text-teal-700 font-semibold flex items-center gap-1">
+                            <ShieldCheck className="h-3.5 w-3.5 text-teal-600" />
+                            {currentUser.identity_verified
+                              ? "Verified Member"
+                              : "Member"}
+                          </span>
+                          <span className="text-slate-400">
+                            {currentUser.city || "India"}
+                          </span>
+                        </div>
                       </div>
+
+                      {/* Primary Profile Action */}
+                      <Link
+                        href="/dashboard/profile"
+                        onClick={() => setUserDropdownOpen(false)}
+                        className="flex items-center gap-2.5 px-3 py-2 rounded-xl text-teal-900 bg-teal-50/70 hover:bg-teal-100/70 font-bold transition-colors mb-1"
+                      >
+                        <User className="h-4 w-4 text-teal-600" />
+                        <span>My Profile & Photo</span>
+                      </Link>
 
                       <Link
                         href="/dashboard"
@@ -220,20 +197,11 @@ export default function Navbar() {
                         <span>Credit Wallet</span>
                       </Link>
 
-                      <Link
-                        href="/dashboard/verification"
-                        onClick={() => setUserDropdownOpen(false)}
-                        className="flex items-center gap-2 px-3 py-2 rounded-xl text-slate-700 hover:bg-slate-50"
-                      >
-                        <ShieldCheck className="h-4 w-4 text-slate-500" />
-                        <span>Verification Center</span>
-                      </Link>
-
                       {currentUser.role === "admin" && (
                         <Link
                           href="/admin"
                           onClick={() => setUserDropdownOpen(false)}
-                          className="flex items-center gap-2 px-3 py-2 rounded-xl text-rose-700 bg-rose-50/50 hover:bg-rose-50 font-bold border-t border-slate-100 my-1"
+                          className="flex items-center gap-2 px-3 py-2 rounded-xl text-rose-700 bg-rose-50/50 hover:bg-rose-50 font-bold my-1"
                         >
                           <Lock className="h-4 w-4" />
                           <span>Admin Portal</span>
@@ -245,11 +213,64 @@ export default function Navbar() {
                           logout();
                           setUserDropdownOpen(false);
                         }}
-                        className="w-full flex items-center gap-2 px-3 py-2 rounded-xl text-rose-600 hover:bg-rose-50 text-left border-t border-slate-100 mt-1"
+                        className="w-full flex items-center gap-2 px-3 py-2 rounded-xl text-rose-600 hover:bg-rose-50 text-left border-t border-slate-100 mt-1 cursor-pointer"
                       >
                         <LogOut className="h-4 w-4" />
                         <span>Sign Out</span>
                       </button>
+
+                      {/* Discreet Test Demo Accounts Menu */}
+                      <div className="pt-2 mt-2 border-t border-slate-100">
+                        <div className="px-2 py-1 flex items-center justify-between text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+                          <span>🧪 Test Accounts (Demo)</span>
+                        </div>
+                        <div className="grid grid-cols-2 gap-1 text-[11px] pt-1">
+                          <button
+                            onClick={() => {
+                              loginAs("user-traveler-arjun");
+                              setUserDropdownOpen(false);
+                            }}
+                            className="p-1.5 text-left rounded-lg hover:bg-slate-100 text-slate-700 truncate"
+                            title="Traveler persona booking stays"
+                          >
+                            <span className="font-semibold block truncate">Arjun</span>
+                            <span className="text-[10px] text-teal-600 block">Traveler</span>
+                          </button>
+                          <button
+                            onClick={() => {
+                              loginAs("user-goa-alisha");
+                              setUserDropdownOpen(false);
+                            }}
+                            className="p-1.5 text-left rounded-lg hover:bg-slate-100 text-slate-700 truncate"
+                            title="Goa Beach Villa Host"
+                          >
+                            <span className="font-semibold block truncate">Alisha</span>
+                            <span className="text-[10px] text-teal-600 block">Goa Host</span>
+                          </button>
+                          <button
+                            onClick={() => {
+                              loginAs("user-bhopal-rajesh");
+                              setUserDropdownOpen(false);
+                            }}
+                            className="p-1.5 text-left rounded-lg hover:bg-slate-100 text-slate-700 truncate"
+                            title="Bhopal Lakeview Host"
+                          >
+                            <span className="font-semibold block truncate">Rajesh</span>
+                            <span className="text-[10px] text-teal-600 block">Bhopal Host</span>
+                          </button>
+                          <button
+                            onClick={() => {
+                              loginAs("user-admin-sarah");
+                              setUserDropdownOpen(false);
+                            }}
+                            className="p-1.5 text-left rounded-lg hover:bg-rose-50 text-rose-700 truncate"
+                            title="Platform Administrator"
+                          >
+                            <span className="font-semibold block truncate">Sarah</span>
+                            <span className="text-[10px] text-rose-600 block">Admin</span>
+                          </button>
+                        </div>
+                      </div>
                     </div>
                   )}
                 </div>
@@ -329,6 +350,14 @@ export default function Navbar() {
                     <div className="text-xs text-teal-600 font-semibold">{creditAccount?.available_balance || 350} credits</div>
                   </div>
                 </div>
+                <Link
+                  href="/dashboard/profile"
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="flex items-center gap-2 px-3 py-2 rounded-xl text-teal-800 bg-teal-50 font-bold"
+                >
+                  <User className="h-4 w-4 text-teal-600" />
+                  <span>My Profile & Photo</span>
+                </Link>
                 <Link
                   href="/dashboard"
                   onClick={() => setMobileMenuOpen(false)}

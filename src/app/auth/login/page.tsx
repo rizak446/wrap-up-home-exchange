@@ -20,11 +20,11 @@ export default function LoginPage() {
     setIsLoading(true);
     setError(null);
 
-    const success = await loginWithEmail(email);
-    if (success) {
+    const res = await loginWithEmail(email, password);
+    if (res.success) {
       router.push("/dashboard");
     } else {
-      setError("No account found with this email. Try one of the quick demo personas below!");
+      setError(res.error || "No account found with this email or invalid password. You can also sign in with one of the quick test accounts below!");
       setIsLoading(false);
     }
   };
@@ -120,7 +120,7 @@ export default function LoginPage() {
           {/* Quick Demo Shortcuts */}
           <div className="mt-6 pt-6 border-t border-slate-100">
             <span className="block text-[11px] font-bold uppercase tracking-wider text-slate-400 mb-3 text-center">
-              Instant Demo Persona Shortcuts
+              🧪 Quick Test Accounts (One-Click Sign In)
             </span>
             <div className="grid grid-cols-2 gap-2 text-xs">
               <button

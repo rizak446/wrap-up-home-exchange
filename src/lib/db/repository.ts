@@ -615,20 +615,41 @@ export const repository = {
 
     store.bookings.unshift(newBooking);
 
-    // Try syncing to Supabase bookings table if foreign key UUIDs are valid
+    // 6b. Try syncing to Supabase bookings table
     try {
       const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
       const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
       if (supabaseUrl && supabaseAnonKey && !supabaseUrl.includes("placeholder")) {
         const isUUID = (str: string) =>
           /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(str);
-        if (isUUID(params.guestId) && isUUID(prop.host_id) && isUUID(params.propertyId)) {
+
+        const USER_UUID_MAP: Record<string, string> = {
+          "user-bhopal-rajesh": "10000000-0000-0000-0000-000000000001",
+          "user-goa-alisha": "10000000-0000-0000-0000-000000000002",
+          "user-jaipur-vikram": "10000000-0000-0000-0000-000000000003",
+          "user-bengaluru-priya": "10000000-0000-0000-0000-000000000004",
+          "user-traveler-arjun": "10000000-0000-0000-0000-000000000005",
+          "user-admin-sarah": "10000000-0000-0000-0000-000000000006",
+        };
+
+        const PROP_UUID_MAP: Record<string, string> = {
+          "prop-bhopal-lakeview": "20000000-0000-0000-0000-000000000001",
+          "prop-goa-candolim": "20000000-0000-0000-0000-000000000002",
+          "prop-jaipur-haveli": "20000000-0000-0000-0000-000000000003",
+          "prop-bengaluru-penthouse": "20000000-0000-0000-0000-000000000004",
+        };
+
+        const targetGuestId = USER_UUID_MAP[params.guestId] || (isUUID(params.guestId) ? params.guestId : null);
+        const targetHostId = USER_UUID_MAP[prop.host_id] || (isUUID(prop.host_id) ? prop.host_id : null);
+        const targetPropId = PROP_UUID_MAP[params.propertyId] || (isUUID(params.propertyId) ? params.propertyId : null);
+
+        if (targetGuestId && targetHostId && targetPropId) {
           const { createClient } = await import("@supabase/supabase-js");
           const sb = createClient(supabaseUrl, supabaseAnonKey);
-          await sb.from("bookings").insert({
-            guest_id: params.guestId,
-            host_id: prop.host_id,
-            property_id: params.propertyId,
+          const { error: sbErr } = await sb.from("bookings").insert({
+            guest_id: targetGuestId,
+            host_id: targetHostId,
+            property_id: targetPropId,
             check_in: params.checkIn,
             check_out: params.checkOut,
             nights,
@@ -639,6 +660,9 @@ export const repository = {
             status: "requested",
             host_notes: params.hostNotes || null,
           });
+          if (sbErr) {
+            console.warn("Supabase bookings sync error:", sbErr.message);
+          }
         }
       }
     } catch (sbErr) {

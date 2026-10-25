@@ -32,14 +32,21 @@ export default function RegisterPage() {
     setError(null);
 
     try {
-      await registerUser({
+      const res = await registerUser({
         fullName,
         email,
+        password,
         phone,
         city,
         country,
       });
-      router.push("/dashboard");
+
+      if (res.success) {
+        router.push("/dashboard");
+      } else {
+        setError(res.error || "Failed to create account. Please check your details.");
+        setIsLoading(false);
+      }
     } catch (err: any) {
       setError(err.message || "Failed to create account");
       setIsLoading(false);
