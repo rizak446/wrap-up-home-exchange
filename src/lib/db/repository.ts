@@ -615,6 +615,36 @@ export const repository = {
 
     store.bookings.unshift(newBooking);
 
+    // Try syncing to Supabase bookings table if foreign key UUIDs are valid
+    try {
+      const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+      const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+      if (supabaseUrl && supabaseAnonKey && !supabaseUrl.includes("placeholder")) {
+        const isUUID = (str: string) =>
+          /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(str);
+        if (isUUID(params.guestId) && isUUID(prop.host_id) && isUUID(params.propertyId)) {
+          const { createClient } = await import("@supabase/supabase-js");
+          const sb = createClient(supabaseUrl, supabaseAnonKey);
+          await sb.from("bookings").insert({
+            guest_id: params.guestId,
+            host_id: prop.host_id,
+            property_id: params.propertyId,
+            check_in: params.checkIn,
+            check_out: params.checkOut,
+            nights,
+            credits_per_night: prop.credits_per_night,
+            total_credits: totalCredits,
+            platform_fee_credits: platformFeeCredits,
+            guest_count: params.guestCount,
+            status: "requested",
+            host_notes: params.hostNotes || null,
+          });
+        }
+      }
+    } catch (sbErr) {
+      console.warn("Notice: Booking kept in platform in-memory ledger (Supabase sync skipped):", sbErr);
+    }
+
     // 7. Append Escrow Ledger Entry
     store.creditTransactions.unshift({
       id: `tx-${Date.now()}`,
@@ -884,16 +914,52 @@ export const repository = {
   },
 
   async getBookingsByGuest(guestId: string): Promise<Booking[]> {
+    try {
+      const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+      const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+      if (supabaseUrl && supabaseAnonKey && !supabaseUrl.includes("placeholder")) {
+        const { createClient } = await import("@supabase/supabase-js");
+        const sb = createClient(supabaseUrl, supabaseAnonKey);
+        const { data } = await sb.from("bookings").select("*, property:properties(*)").eq("guest_id", guestId);
+        if (data && data.length > 0) {
+          return data;
+        }
+      }
+    } catch {}
     const store = getStore();
     return store.bookings.filter((b) => b.guest_id === guestId);
   },
 
   async getBookingsByHost(hostId: string): Promise<Booking[]> {
+    try {
+      const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+      const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+      if (supabaseUrl && supabaseAnonKey && !supabaseUrl.includes("placeholder")) {
+        const { createClient } = await import("@supabase/supabase-js");
+        const sb = createClient(supabaseUrl, supabaseAnonKey);
+        const { data } = await sb.from("bookings").select("*, property:properties(*)").eq("host_id", hostId);
+        if (data && data.length > 0) {
+          return data;
+        }
+      }
+    } catch {}
     const store = getStore();
     return store.bookings.filter((b) => b.host_id === hostId);
   },
 
   async getAllBookings(): Promise<Booking[]> {
+    try {
+      const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+      const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+      if (supabaseUrl && supabaseAnonKey && !supabaseUrl.includes("placeholder")) {
+        const { createClient } = await import("@supabase/supabase-js");
+        const sb = createClient(supabaseUrl, supabaseAnonKey);
+        const { data } = await sb.from("bookings").select("*, property:properties(*)");
+        if (data && data.length > 0) {
+          return data;
+        }
+      }
+    } catch {}
     const store = getStore();
     return store.bookings;
   },
