@@ -71,32 +71,35 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           }
         }
 
-        // Check if user previously chosen a demo account
-        const savedDemoId =
+        // Check localStorage for remembered user session
+        const savedUserJson =
           typeof window !== "undefined"
-            ? localStorage.getItem("haven_demo_user_id")
+            ? localStorage.getItem("haven_current_user")
             : null;
 
-        if (savedDemoId) {
-          const demoUser = INITIAL_USERS.find((u) => u.id === savedDemoId);
-          if (demoUser) {
-            setCurrentUser(demoUser);
-            setIsDemoUser(true);
-            await fetchCredits(demoUser.id);
-            setIsLoading(false);
-            return;
-          }
+        if (savedUserJson) {
+          try {
+            const savedProfile = JSON.parse(savedUserJson);
+            if (savedProfile?.id) {
+              const { data: profile } = await supabase
+                .from("profiles")
+                .select("*")
+                .eq("id", savedProfile.id)
+                .maybeSingle();
+
+              const activeProfile = profile || savedProfile;
+              setCurrentUser(activeProfile);
+              setIsDemoUser(false);
+              await fetchCredits(activeProfile.id);
+              setIsLoading(false);
+              return;
+            }
+          } catch {}
         }
 
-        // Default to demo traveler (Arjun Verma) so previews work out of the box
-        const defaultDemo =
-          INITIAL_USERS.find((u) => u.id === "user-traveler-arjun") ||
-          INITIAL_USERS[0];
-        setCurrentUser(defaultDemo);
-        setIsDemoUser(true);
-        if (defaultDemo) {
-          await fetchCredits(defaultDemo.id);
-        }
+        // Clean initial state: no dummy user auto-logged-in
+        setCurrentUser(null);
+        setIsDemoUser(false);
       } catch (err) {
         console.error("Auth init error:", err);
       } finally {
@@ -127,17 +130,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   ): Promise<{ success: boolean; error?: string }> => {
     setIsLoading(true);
 
-    // 1. Check if email matches one of the sample demo accounts
-    const demoUser = INITIAL_USERS.find(
-      (u) => u.email.toLowerCase() === email.toLowerCase()
-    );
-    if (demoUser) {
-      await loginAs(demoUser.id);
-      setIsLoading(false);
-      return { success: true };
-    }
-
-    // 2. Otherwise sign in via live Supabase Auth
     try {
       const supabase = createClient();
       const { data, error } = await supabase.auth.signInWithPassword({
@@ -332,6 +324,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             country: updatedUser.country,
             phone: updatedUser.phone,
             avatar_url: updatedUser.avatar_url,
+            document_type: updatedUser.document_type || null,
+            document_number: updatedUser.document_number || null,
+            document_url: updatedUser.document_url || null,
             updated_at: new Date().toISOString(),
           })
           .eq("id", currentUser.id);
@@ -339,12 +334,21 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         if (error) {
           console.error("Error updating Supabase profile:", error);
         }
-      } else {
-        // Also update in INITIAL_USERS if demo persona
-        const idx = INITIAL_USERS.findIndex((u) => u.id === currentUser.id);
-        if (idx >= 0) {
-          INITIAL_USERS[idx] = updatedUser;
+
+        // Also record in user_verifications if document uploaded
+        if (updatedUser.document_type && (updatedUser.document_url || updatedUser.document_number)) {
+          await supabase.from("user_verifications").upsert({
+            user_id: currentUser.id,
+            document_type: updatedUser.document_type,
+            document_ref: updatedUser.document_number || "Uploaded Document File",
+            status: "pending",
+            created_at: new Date().toISOString(),
+          });
         }
+      }
+
+      if (typeof window !== "undefined") {
+        localStorage.setItem("haven_current_user", JSON.stringify(updatedUser));
       }
 
       setCurrentUser(updatedUser);
@@ -364,6 +368,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setIsDemoUser(false);
     if (typeof window !== "undefined") {
       localStorage.removeItem("haven_demo_user_id");
+      localStorage.removeItem("haven_current_user");
     }
   };
 

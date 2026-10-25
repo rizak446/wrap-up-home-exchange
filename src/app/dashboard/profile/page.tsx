@@ -1,79 +1,66 @@
 "use client";
 
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useEffect } from "react";
+import Link from "next/link";
 import {
   User,
   Camera,
   Upload,
-  Link as LinkIcon,
-  Check,
+  Trash2,
   AlertCircle,
   ShieldCheck,
   MapPin,
   Phone,
   Mail,
-  Sparkles,
   Save,
   CheckCircle2,
+  FileText,
+  FileCheck,
 } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 
-const PRESET_AVATARS = [
-  {
-    name: "Classic Traveler",
-    url: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=300&auto=format&fit=crop&q=80",
-  },
-  {
-    name: "Architect & Host",
-    url: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=300&auto=format&fit=crop&q=80",
-  },
-  {
-    name: "Heritage Restorer",
-    url: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=300&auto=format&fit=crop&q=80",
-  },
-  {
-    name: "Tech Explorer",
-    url: "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=300&auto=format&fit=crop&q=80",
-  },
-  {
-    name: "Global Nomad",
-    url: "https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?w=300&auto=format&fit=crop&q=80",
-  },
-  {
-    name: "Creative Resident",
-    url: "https://images.unsplash.com/photo-1517841905240-472988babdf9?w=300&auto=format&fit=crop&q=80",
-  },
-];
-
 export default function ProfileSettingsPage() {
-  const { currentUser, updateProfile, isDemoUser } = useAuth();
+  const { currentUser, updateProfile } = useAuth();
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const docFileInputRef = useRef<HTMLInputElement>(null);
 
-  const [fullName, setFullName] = useState(currentUser?.full_name || "");
-  const [city, setCity] = useState(currentUser?.city || "");
-  const [country, setCountry] = useState(currentUser?.country || "India");
-  const [phone, setPhone] = useState(currentUser?.phone || "");
-  const [bio, setBio] = useState(
-    currentUser?.bio ||
-      "Passionate traveler and homeowner. Excited to share authentic stays and discover welcoming residences across India."
-  );
+  const [fullName, setFullName] = useState("");
+  const [city, setCity] = useState("");
+  const [country, setCountry] = useState("India");
+  const [phone, setPhone] = useState("");
+  const [bio, setBio] = useState("");
 
-  // Avatar state
-  const [avatarUrl, setAvatarUrl] = useState(
-    currentUser?.avatar_url ||
-      "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=300&auto=format&fit=crop&q=80"
-  );
-  const [customUrlInput, setCustomUrlInput] = useState("");
-  const [showUrlInput, setShowUrlInput] = useState(false);
+  // Photo state
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
+
+  // Document verification state
+  const [documentType, setDocumentType] = useState("aadhaar");
+  const [documentNumber, setDocumentNumber] = useState("");
+  const [documentUrl, setDocumentUrl] = useState<string | null>(null);
+  const [documentFileName, setDocumentFileName] = useState("");
 
   const [isSaving, setIsSaving] = useState(false);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
-  // Handle local image file upload (converts to optimized data URI)
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  useEffect(() => {
+    if (currentUser) {
+      setFullName(currentUser.full_name || "");
+      setCity(currentUser.city || "");
+      setCountry(currentUser.country || "India");
+      setPhone(currentUser.phone || "");
+      setBio(currentUser.bio || "");
+      setAvatarUrl(currentUser.avatar_url || null);
+      setDocumentType(currentUser.document_type || "aadhaar");
+      setDocumentNumber(currentUser.document_number || "");
+      setDocumentUrl(currentUser.document_url || null);
+    }
+  }, [currentUser]);
+
+  // Handle local profile image upload (PNG, JPG, WebP)
+  const handlePhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
@@ -99,12 +86,33 @@ export default function ProfileSettingsPage() {
     reader.readAsDataURL(file);
   };
 
-  const handleApplyCustomUrl = () => {
-    if (!customUrlInput.trim()) return;
-    setAvatarUrl(customUrlInput.trim());
-    setCustomUrlInput("");
-    setShowUrlInput(false);
-    setSuccessMessage("Image link applied! Click 'Save Profile' to commit.");
+  // Handle local document file upload (PDF or Image)
+  const handleDocFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (file.size > 8 * 1024 * 1024) {
+      setErrorMessage("Document file size must be less than 8MB.");
+      return;
+    }
+
+    setDocumentFileName(file.name);
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const result = event.target?.result as string;
+      if (result) {
+        setDocumentUrl(result);
+        setSuccessMessage("Document attached! Click 'Save Profile' to save details.");
+        setErrorMessage(null);
+      }
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleRemovePhoto = () => {
+    setAvatarUrl(null);
+    setSuccessMessage("Photo removed. Click 'Save Profile' to apply.");
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -120,11 +128,14 @@ export default function ProfileSettingsPage() {
         country: country.trim(),
         phone: phone.trim(),
         bio: bio.trim(),
-        avatar_url: avatarUrl,
+        avatar_url: avatarUrl || undefined,
+        document_type: documentType,
+        document_number: documentNumber.trim() || undefined,
+        document_url: documentUrl || undefined,
       });
 
       if (res.success) {
-        setSuccessMessage("Your profile and photo were updated successfully!");
+        setSuccessMessage("Your profile and verification details were saved successfully!");
         setTimeout(() => setSuccessMessage(null), 4000);
       } else {
         setErrorMessage(res.error || "Failed to update profile.");
@@ -136,19 +147,44 @@ export default function ProfileSettingsPage() {
     }
   };
 
+  if (!currentUser) {
+    return (
+      <div className="max-w-md mx-auto text-center py-20 px-4">
+        <div className="p-8 rounded-3xl bg-white border border-slate-200 shadow-luxury space-y-4">
+          <div className="w-14 h-14 rounded-2xl bg-teal-50 text-teal-700 flex items-center justify-center mx-auto">
+            <User className="h-7 w-7" />
+          </div>
+          <h2 className="text-xl font-bold text-navy-950 font-serif">
+            Sign In to Manage Profile
+          </h2>
+          <p className="text-xs text-slate-500">
+            Please log in with your verified account to view and update your profile photo, personal information, and government identity documents.
+          </p>
+          <div className="pt-2">
+            <Link href="/auth/login">
+              <Button variant="teal" size="md" className="w-full font-bold">
+                Sign In
+              </Button>
+            </Link>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="max-w-4xl mx-auto space-y-8 pb-16">
       {/* Header */}
       <div>
         <div className="flex items-center gap-2 mb-1 text-xs font-bold uppercase tracking-wider text-teal-700">
           <User className="h-4 w-4" />
-          <span>Member Profile & Identity</span>
+          <span>Member Profile & Verification</span>
         </div>
         <h1 className="text-3xl font-extrabold text-navy-950 font-serif tracking-tight">
           Profile Settings
         </h1>
         <p className="text-xs text-slate-500 mt-1 max-w-xl">
-          Customize your public member appearance, update your verified profile photo, and share your host bio with the HavenSwap community.
+          Manage your personal account information, upload your verified profile photo, and submit your identity documents for secure membership verification.
         </p>
       </div>
 
@@ -168,43 +204,49 @@ export default function ProfileSettingsPage() {
       )}
 
       <form onSubmit={handleSubmit} className="space-y-8">
-        {/* PROFILE PHOTO SECTION */}
+        {/* 1. PROFILE PHOTO SECTION */}
         <div className="p-6 sm:p-8 rounded-3xl bg-white border border-slate-200/90 shadow-card space-y-6">
           <div className="border-b border-slate-100 pb-4">
             <h3 className="text-base font-bold text-navy-950">Profile Photo</h3>
             <p className="text-xs text-slate-500 mt-0.5">
-              A clear, friendly face photo helps build immediate trust with homeowners and guests.
+              Upload a clear photo of yourself. A genuine profile photo helps hosts and guests verify your identity.
             </p>
           </div>
 
           <div className="flex flex-col sm:flex-row items-center gap-6">
             {/* Avatar Preview */}
             <div className="relative group">
-              <div className="w-28 h-28 rounded-full overflow-hidden ring-4 ring-teal-500/30 border-2 border-white shadow-luxury">
-                <img
-                  src={avatarUrl}
-                  alt={fullName || "User Avatar"}
-                  className="w-full h-full object-cover"
-                />
+              <div className="w-28 h-28 rounded-full overflow-hidden ring-4 ring-teal-500/20 border-2 border-white shadow-luxury bg-slate-100 flex items-center justify-center">
+                {avatarUrl ? (
+                  <img
+                    src={avatarUrl}
+                    alt={fullName || "User Avatar"}
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  <div className="w-full h-full bg-slate-100 flex items-center justify-center text-slate-400">
+                    <User className="h-12 w-12" />
+                  </div>
+                )}
               </div>
               <button
                 type="button"
                 onClick={() => fileInputRef.current?.click()}
-                className="absolute inset-0 rounded-full bg-navy-950/50 text-white flex flex-col items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity backdrop-blur-xs cursor-pointer"
-                title="Click to upload new photo"
+                className="absolute inset-0 rounded-full bg-navy-950/60 text-white flex flex-col items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity backdrop-blur-xs cursor-pointer"
+                title="Change Photo"
               >
                 <Camera className="h-6 w-6 mb-1" />
                 <span className="text-[10px] font-bold">Change</span>
               </button>
             </div>
 
-            {/* Upload Buttons & Options */}
+            {/* Photo Action Buttons */}
             <div className="flex-1 space-y-3 text-center sm:text-left">
               <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2.5">
                 <input
                   type="file"
                   ref={fileInputRef}
-                  onChange={handleFileChange}
+                  onChange={handlePhotoUpload}
                   accept="image/png, image/jpeg, image/jpg, image/webp"
                   className="hidden"
                 />
@@ -219,91 +261,33 @@ export default function ProfileSettingsPage() {
                   Upload Photo
                 </Button>
 
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setShowUrlInput(!showUrlInput)}
-                  className="gap-1.5"
-                >
-                  <LinkIcon className="h-3.5 w-3.5 text-slate-500" />
-                  Paste Image URL
-                </Button>
+                {avatarUrl && (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={handleRemovePhoto}
+                    className="gap-1.5 text-rose-600 hover:text-rose-700 hover:bg-rose-50 border-rose-200"
+                  >
+                    <Trash2 className="h-3.5 w-3.5" />
+                    Remove
+                  </Button>
+                )}
               </div>
 
               <p className="text-[11px] text-slate-400">
-                Recommended: Square image (.jpg, .png, or .webp), up to 5MB.
+                Supports JPG, PNG, or WebP files up to 5MB.
               </p>
-
-              {/* Paste URL Input Drawer */}
-              {showUrlInput && (
-                <div className="pt-2 flex items-center gap-2 max-w-md animate-fadeIn">
-                  <input
-                    type="url"
-                    placeholder="https://example.com/my-photo.jpg"
-                    value={customUrlInput}
-                    onChange={(e) => setCustomUrlInput(e.target.value)}
-                    className="flex-1 px-3 py-2 rounded-xl border border-slate-300 text-xs text-slate-900 focus:outline-none focus:ring-2 focus:ring-teal-500"
-                  />
-                  <Button
-                    type="button"
-                    variant="primary"
-                    size="sm"
-                    onClick={handleApplyCustomUrl}
-                  >
-                    Apply
-                  </Button>
-                </div>
-              )}
-            </div>
-          </div>
-
-          {/* Preset Travel Avatars */}
-          <div className="pt-4 border-t border-slate-100">
-            <span className="block text-xs font-bold text-slate-700 mb-3">
-              Or pick from curated community travel avatars:
-            </span>
-            <div className="flex flex-wrap gap-3">
-              {PRESET_AVATARS.map((preset, index) => {
-                const isSelected = avatarUrl === preset.url;
-                return (
-                  <button
-                    key={index}
-                    type="button"
-                    onClick={() => {
-                      setAvatarUrl(preset.url);
-                      setSuccessMessage(`Selected "${preset.name}". Click 'Save Profile' to apply.`);
-                    }}
-                    className={`relative rounded-full p-1 transition-all ${
-                      isSelected
-                        ? "ring-3 ring-teal-500 scale-105 shadow-md"
-                        : "opacity-70 hover:opacity-100 hover:scale-105"
-                    }`}
-                    title={preset.name}
-                  >
-                    <img
-                      src={preset.url}
-                      alt={preset.name}
-                      className="w-12 h-12 rounded-full object-cover"
-                    />
-                    {isSelected && (
-                      <span className="absolute bottom-0 right-0 w-4 h-4 rounded-full bg-teal-600 text-white flex items-center justify-center text-[10px]">
-                        <Check className="h-2.5 w-2.5" />
-                      </span>
-                    )}
-                  </button>
-                );
-              })}
             </div>
           </div>
         </div>
 
-        {/* PERSONAL DETAILS SECTION */}
+        {/* 2. PERSONAL DETAILS SECTION */}
         <div className="p-6 sm:p-8 rounded-3xl bg-white border border-slate-200/90 shadow-card space-y-6">
           <div className="border-b border-slate-100 pb-4">
             <h3 className="text-base font-bold text-navy-950">Personal Details</h3>
             <p className="text-xs text-slate-500 mt-0.5">
-              These details are visible to other members when you list a home or send a stay request.
+              These details are saved in your member profile and used for communication during home exchanges.
             </p>
           </div>
 
@@ -334,12 +318,12 @@ export default function ProfileSettingsPage() {
                 <input
                   type="email"
                   disabled
-                  value={currentUser?.email || ""}
+                  value={currentUser.email || ""}
                   className="w-full pl-10 pr-3.5 py-2.5 rounded-xl border border-slate-200 bg-slate-100 text-xs text-slate-500 cursor-not-allowed"
                 />
               </div>
               <span className="text-[10px] text-slate-400 mt-1 block">
-                Primary login email cannot be edited directly.
+                Primary login email cannot be changed directly.
               </span>
             </div>
 
@@ -354,7 +338,7 @@ export default function ProfileSettingsPage() {
                   value={phone}
                   onChange={(e) => setPhone(e.target.value)}
                   className="w-full pl-10 pr-3.5 py-2.5 rounded-xl border border-slate-300 text-xs text-slate-900 focus:outline-none focus:ring-2 focus:ring-teal-500"
-                  placeholder="+91 98..."
+                  placeholder="+91 98260..."
                 />
               </div>
             </div>
@@ -371,7 +355,7 @@ export default function ProfileSettingsPage() {
                   value={city}
                   onChange={(e) => setCity(e.target.value)}
                   className="w-full pl-10 pr-3.5 py-2.5 rounded-xl border border-slate-300 text-xs text-slate-900 focus:outline-none focus:ring-2 focus:ring-teal-500"
-                  placeholder="Bhopal, Goa, Jaipur..."
+                  placeholder="e.g. Bhopal, Goa, Delhi..."
                 />
               </div>
             </div>
@@ -391,45 +375,127 @@ export default function ProfileSettingsPage() {
 
             <div className="sm:col-span-2">
               <label className="block text-xs font-bold text-navy-950 mb-1.5">
-                About Me / Host Bio
+                About Me / Bio
               </label>
               <textarea
-                rows={4}
+                rows={3}
                 value={bio}
                 onChange={(e) => setBio(e.target.value)}
                 className="w-full p-3.5 rounded-xl border border-slate-300 text-xs text-slate-900 focus:outline-none focus:ring-2 focus:ring-teal-500 leading-relaxed"
-                placeholder="Share your travel experiences, hobbies, or what makes your home special..."
+                placeholder="Tell other community members a little about yourself, your travels, or your lifestyle..."
               />
-              <span className="text-[11px] text-slate-400 mt-1 block">
-                Shown on your public profile and sent along with booking exchange requests.
-              </span>
             </div>
           </div>
         </div>
 
-        {/* TRUST & VERIFICATION STATUS */}
-        <div className="p-6 rounded-3xl bg-slate-100/80 border border-slate-200 text-xs text-slate-600 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-2xl bg-teal-50 text-teal-700 flex items-center justify-center flex-shrink-0">
-              <ShieldCheck className="h-6 w-6 text-teal-600" />
+        {/* 3. IDENTITY DOCUMENT & VERIFICATION DETAILS */}
+        <div className="p-6 sm:p-8 rounded-3xl bg-white border border-slate-200/90 shadow-card space-y-6">
+          <div className="border-b border-slate-100 pb-4">
+            <div className="flex items-center gap-2">
+              <FileCheck className="h-5 w-5 text-teal-600" />
+              <h3 className="text-base font-bold text-navy-950">Identity & Verification Documents</h3>
             </div>
+            <p className="text-xs text-slate-500 mt-0.5">
+              Enter your government identity details and upload proof for verified member status.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <div className="flex items-center gap-2">
-                <h4 className="font-bold text-navy-950 text-sm">Member Verification Status</h4>
-                {currentUser?.identity_verified ? (
-                  <Badge variant="teal" className="text-[10px] font-bold">Verified</Badge>
+              <label className="block text-xs font-bold text-navy-950 mb-1.5">
+                Government Document Type
+              </label>
+              <select
+                value={documentType}
+                onChange={(e) => setDocumentType(e.target.value)}
+                className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-xs text-slate-900 bg-white focus:outline-none focus:ring-2 focus:ring-teal-500"
+              >
+                <option value="aadhaar">Aadhaar Card</option>
+                <option value="passport">Passport</option>
+                <option value="driving_license">Driving License</option>
+                <option value="voter_id">Voter ID Card</option>
+              </select>
+            </div>
+
+            <div>
+              <label className="block text-xs font-bold text-navy-950 mb-1.5">
+                Document / ID Number
+              </label>
+              <input
+                type="text"
+                value={documentNumber}
+                onChange={(e) => setDocumentNumber(e.target.value)}
+                placeholder="e.g. 1234 5678 9012 or Passport No."
+                className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-xs text-slate-900 focus:outline-none focus:ring-2 focus:ring-teal-500"
+              />
+            </div>
+
+            {/* Document Upload File */}
+            <div className="sm:col-span-2">
+              <label className="block text-xs font-bold text-navy-950 mb-1.5">
+                Upload Document Proof (Front Side / PDF)
+              </label>
+              <input
+                type="file"
+                ref={docFileInputRef}
+                onChange={handleDocFileUpload}
+                accept="image/png, image/jpeg, image/jpg, application/pdf"
+                className="hidden"
+              />
+
+              <div
+                onClick={() => docFileInputRef.current?.click()}
+                className="border-2 border-dashed border-slate-200 hover:border-teal-500 rounded-2xl p-5 text-center cursor-pointer transition-colors bg-slate-50/50 hover:bg-teal-50/30"
+              >
+                {documentUrl ? (
+                  <div className="flex items-center justify-center gap-3">
+                    <FileText className="h-6 w-6 text-teal-600" />
+                    <div className="text-left">
+                      <p className="text-xs font-bold text-teal-900">
+                        {documentFileName || "Identity Document Attached"}
+                      </p>
+                      <span className="text-[10px] text-slate-400">Click to replace file</span>
+                    </div>
+                  </div>
                 ) : (
-                  <Badge variant="outline" className="text-[10px] text-amber-700 bg-amber-50 border-amber-300">Pending Review</Badge>
+                  <div className="space-y-1">
+                    <Upload className="h-6 w-6 text-slate-400 mx-auto" />
+                    <p className="text-xs font-bold text-slate-700">
+                      Click to choose document file (Image or PDF)
+                    </p>
+                    <p className="text-[11px] text-slate-400">
+                      Max file size: 8MB. Securely encrypted and protected under DPDP Act 2023.
+                    </p>
+                  </div>
                 )}
               </div>
-              <p className="text-[11px] text-slate-500 mt-0.5">
-                Complies with India Digital Personal Data Protection (DPDP) Act 2023.
-              </p>
             </div>
+          </div>
+
+          {/* Verification Badge Status */}
+          <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200 flex items-center justify-between text-xs">
+            <div className="flex items-center gap-2.5">
+              <ShieldCheck className="h-5 w-5 text-teal-600" />
+              <div>
+                <span className="font-bold text-navy-950 block">Status:</span>
+                <span className="text-slate-500 text-[11px]">
+                  {currentUser.identity_verified
+                    ? "Verified Member"
+                    : documentNumber || documentUrl
+                    ? "Document Submitted - Verification in Progress"
+                    : "Not Verified (Submit documents above)"}
+                </span>
+              </div>
+            </div>
+            {currentUser.identity_verified ? (
+              <Badge variant="teal" className="text-[10px]">Verified</Badge>
+            ) : (
+              <Badge variant="outline" className="text-[10px] text-slate-600">Pending</Badge>
+            )}
           </div>
         </div>
 
-        {/* Submit Actions */}
+        {/* Save Button */}
         <div className="flex items-center justify-end gap-3 pt-2">
           <Button
             type="submit"
@@ -439,7 +505,7 @@ export default function ProfileSettingsPage() {
             className="font-bold px-8 shadow-md"
           >
             <Save className="h-4 w-4 mr-2" />
-            Save Profile
+            Save Profile & Details
           </Button>
         </div>
       </form>

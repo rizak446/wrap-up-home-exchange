@@ -24,7 +24,7 @@ import { Badge } from "@/components/ui/badge";
 
 export default function Navbar() {
   const pathname = usePathname();
-  const { currentUser, creditAccount, logout, loginAs } = useAuth();
+  const { currentUser, creditAccount, logout } = useAuth();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [userDropdownOpen, setUserDropdownOpen] = useState(false);
   const [roleSwitcherOpen, setRoleSwitcherOpen] = useState(false);
@@ -218,59 +218,6 @@ export default function Navbar() {
                         <LogOut className="h-4 w-4" />
                         <span>Sign Out</span>
                       </button>
-
-                      {/* Discreet Test Demo Accounts Menu */}
-                      <div className="pt-2 mt-2 border-t border-slate-100">
-                        <div className="px-2 py-1 flex items-center justify-between text-[10px] font-bold text-slate-400 uppercase tracking-wider">
-                          <span>🧪 Test Accounts (Demo)</span>
-                        </div>
-                        <div className="grid grid-cols-2 gap-1 text-[11px] pt-1">
-                          <button
-                            onClick={() => {
-                              loginAs("user-traveler-arjun");
-                              setUserDropdownOpen(false);
-                            }}
-                            className="p-1.5 text-left rounded-lg hover:bg-slate-100 text-slate-700 truncate"
-                            title="Traveler persona booking stays"
-                          >
-                            <span className="font-semibold block truncate">Arjun</span>
-                            <span className="text-[10px] text-teal-600 block">Traveler</span>
-                          </button>
-                          <button
-                            onClick={() => {
-                              loginAs("user-goa-alisha");
-                              setUserDropdownOpen(false);
-                            }}
-                            className="p-1.5 text-left rounded-lg hover:bg-slate-100 text-slate-700 truncate"
-                            title="Goa Beach Villa Host"
-                          >
-                            <span className="font-semibold block truncate">Alisha</span>
-                            <span className="text-[10px] text-teal-600 block">Goa Host</span>
-                          </button>
-                          <button
-                            onClick={() => {
-                              loginAs("user-bhopal-rajesh");
-                              setUserDropdownOpen(false);
-                            }}
-                            className="p-1.5 text-left rounded-lg hover:bg-slate-100 text-slate-700 truncate"
-                            title="Bhopal Lakeview Host"
-                          >
-                            <span className="font-semibold block truncate">Rajesh</span>
-                            <span className="text-[10px] text-teal-600 block">Bhopal Host</span>
-                          </button>
-                          <button
-                            onClick={() => {
-                              loginAs("user-admin-sarah");
-                              setUserDropdownOpen(false);
-                            }}
-                            className="p-1.5 text-left rounded-lg hover:bg-rose-50 text-rose-700 truncate"
-                            title="Platform Administrator"
-                          >
-                            <span className="font-semibold block truncate">Sarah</span>
-                            <span className="text-[10px] text-rose-600 block">Admin</span>
-                          </button>
-                        </div>
-                      </div>
                     </div>
                   )}
                 </div>

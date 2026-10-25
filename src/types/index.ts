@@ -47,6 +47,9 @@ export interface UserProfile {
   city: string;
   bio?: string;
   avatar_url?: string;
+  document_type?: string;
+  document_number?: string;
+  document_url?: string;
   identity_verified: boolean;
   property_verified: boolean;
   role: UserRole;

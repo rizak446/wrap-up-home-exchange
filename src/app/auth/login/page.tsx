@@ -9,7 +9,7 @@ import { useAuth } from "@/context/AuthContext";
 
 export default function LoginPage() {
   const router = useRouter();
-  const { loginWithEmail, loginAs } = useAuth();
+  const { loginWithEmail } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -24,15 +24,9 @@ export default function LoginPage() {
     if (res.success) {
       router.push("/dashboard");
     } else {
-      setError(res.error || "No account found with this email or invalid password. You can also sign in with one of the quick test accounts below!");
+      setError(res.error || "Invalid email or password. Please check your credentials and try again.");
       setIsLoading(false);
     }
-  };
-
-  const handleDemoLogin = async (userId: string) => {
-    setIsLoading(true);
-    await loginAs(userId);
-    router.push("/dashboard");
   };
 
   return (
@@ -116,50 +110,6 @@ export default function LoginPage() {
               Sign In to HavenSwap
             </Button>
           </form>
-
-          {/* Quick Demo Shortcuts */}
-          <div className="mt-6 pt-6 border-t border-slate-100">
-            <span className="block text-[11px] font-bold uppercase tracking-wider text-slate-400 mb-3 text-center">
-              🧪 Quick Test Accounts (One-Click Sign In)
-            </span>
-            <div className="grid grid-cols-2 gap-2 text-xs">
-              <button
-                type="button"
-                onClick={() => handleDemoLogin("user-traveler-arjun")}
-                className="p-2.5 rounded-xl border border-slate-200 hover:border-teal-500 hover:bg-teal-50/50 text-left transition-colors"
-              >
-                <span className="font-bold text-navy-950 block">Arjun Verma</span>
-                <span className="text-[10px] text-slate-500">Traveler (Bhopal)</span>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => handleDemoLogin("user-goa-alisha")}
-                className="p-2.5 rounded-xl border border-slate-200 hover:border-teal-500 hover:bg-teal-50/50 text-left transition-colors"
-              >
-                <span className="font-bold text-navy-950 block">Alisha Fernandes</span>
-                <span className="text-[10px] text-slate-500">Host (Goa Villa)</span>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => handleDemoLogin("user-bhopal-rajesh")}
-                className="p-2.5 rounded-xl border border-slate-200 hover:border-teal-500 hover:bg-teal-50/50 text-left transition-colors"
-              >
-                <span className="font-bold text-navy-950 block">Rajesh Sharma</span>
-                <span className="text-[10px] text-slate-500">Host (Bhopal Villa)</span>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => handleDemoLogin("user-admin-sarah")}
-                className="p-2.5 rounded-xl border border-rose-200 hover:bg-rose-50/50 text-left transition-colors"
-              >
-                <span className="font-bold text-rose-700 block">Sarah Matthews</span>
-                <span className="text-[10px] text-slate-500">Platform Admin</span>
-              </button>
-            </div>
-          </div>
         </div>
       </div>
     </div>
