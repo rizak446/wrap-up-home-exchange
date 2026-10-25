@@ -120,6 +120,69 @@ export const repository = {
     verifiedOnly?: boolean;
     sort?: "relevance" | "price_asc" | "price_desc" | "newest";
   }): Promise<Property[]> {
+    // Try querying Supabase live table first
+    try {
+      const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+      const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+      if (supabaseUrl && supabaseAnonKey && !supabaseUrl.includes("placeholder")) {
+        const { createClient } = await import("@supabase/supabase-js");
+        const sb = createClient(supabaseUrl, supabaseAnonKey);
+        let query = sb
+          .from("properties")
+          .select("*, property_images(*)")
+          .eq("status", "published");
+
+        if (filters?.city && filters.city.trim() !== "") {
+          const q = filters.city.toLowerCase().trim();
+          query = query.or(`city.ilike.%${q}%,state.ilike.%${q}%,neighbourhood.ilike.%${q}%,title.ilike.%${q}%`);
+        }
+        if (filters?.guests && filters.guests > 1) {
+          query = query.gte("max_guests", filters.guests);
+        }
+        if (filters?.minCredits !== undefined) {
+          query = query.gte("credits_per_night", filters.minCredits);
+        }
+        if (filters?.maxCredits !== undefined) {
+          query = query.lte("credits_per_night", filters.maxCredits);
+        }
+        if (filters?.propertyType && filters.propertyType !== "all") {
+          query = query.eq("property_type", filters.propertyType);
+        }
+        if (filters?.verifiedOnly) {
+          query = query.eq("verification_status", "verified");
+        }
+        if (filters?.sort === "price_asc") {
+          query = query.order("credits_per_night", { ascending: true });
+        } else if (filters?.sort === "price_desc") {
+          query = query.order("credits_per_night", { ascending: false });
+        } else if (filters?.sort === "newest") {
+          query = query.order("created_at", { ascending: false });
+        }
+
+        const { data, error } = await query;
+        if (!error && data && data.length > 0) {
+          return data.map((d: any) => ({
+            ...d,
+            images: d.property_images && d.property_images.length > 0 ? d.property_images : [
+              {
+                id: `img-${d.id}`,
+                property_id: d.id,
+                image_url: "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=1200&auto=format&fit=crop&q=80",
+                caption: d.title,
+                display_order: 1,
+                is_cover: true,
+              }
+            ],
+            amenities: [],
+            rating: 5.0,
+            review_count: 0,
+          }));
+        }
+      }
+    } catch {
+      // Fallback gracefully to mock store
+    }
+
     const store = getStore();
     let results = store.properties.filter((p) => p.status === "published");
 
@@ -171,6 +234,32 @@ export const repository = {
   },
 
   async getPropertyById(id: string): Promise<Property | null> {
+    try {
+      const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+      const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+      if (supabaseUrl && supabaseAnonKey && !supabaseUrl.includes("placeholder")) {
+        const { createClient } = await import("@supabase/supabase-js");
+        const sb = createClient(supabaseUrl, supabaseAnonKey);
+        const { data, error } = await sb
+          .from("properties")
+          .select("*, property_images(*)")
+          .eq("id", id)
+          .maybeSingle();
+
+        if (!error && data) {
+          return {
+            ...data,
+            images: data.property_images && data.property_images.length > 0 ? data.property_images : [],
+            amenities: [],
+            rating: 5.0,
+            review_count: 0,
+          };
+        }
+      }
+    } catch {
+      // Fallback to store
+    }
+
     const store = getStore();
     const prop = store.properties.find((p) => p.id === id);
     if (!prop) return null;
