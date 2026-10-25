@@ -1,69 +1,131 @@
 "use client";
 
-import React, { useState } from "react";
-import { Check, ShieldCheck, Zap, Sparkles, HelpCircle, AlertCircle } from "lucide-react";
+import React, { useState, useEffect } from "react";
+import { Check, ShieldCheck, Zap, Sparkles, HelpCircle, AlertCircle, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Modal } from "@/components/ui/modal";
+
+interface PlanItem {
+  id: string;
+  name: string;
+  description: string;
+  priceMonthly: number;
+  priceAnnual: number;
+  features: string[];
+  popular: boolean;
+  cta: string;
+}
+
+const DEFAULT_PLANS: PlanItem[] = [
+  {
+    id: "free",
+    name: "Free Explorer",
+    description: "For curious homeowners beginning their home exchange journey.",
+    priceMonthly: 0,
+    priceAnnual: 0,
+    features: [
+      "Browse all verified homes across India",
+      "1 active home listing",
+      "2 booking requests per month",
+      "Standard member support",
+      "Basic messaging with hosts",
+    ],
+    popular: false,
+    cta: "Current Plan",
+  },
+  {
+    id: "standard",
+    name: "Standard Member",
+    description: "Ideal for frequent travelers, remote professionals, and families.",
+    priceMonthly: 799,
+    priceAnnual: 7990,
+    features: [
+      "Verified Member Identity Badge",
+      "Up to 2 active home listings",
+      "8 booking requests per month",
+      "5% bonus credits earned on every host stay",
+      "Priority customer support & dispute mediation",
+      "Advanced availability calendar filters",
+    ],
+    popular: true,
+    cta: "Join Standard",
+  },
+  {
+    id: "premium",
+    name: "Premium Concierge",
+    description: "The ultimate club privilege for avid globetrotters and multi-homeowners.",
+    priceMonthly: 1499,
+    priceAnnual: 14990,
+    features: [
+      "Elite Verification Status & Featured Listing Badge",
+      "Up to 5 active home listings",
+      "Unlimited monthly booking requests",
+      "10% bonus credits earned on hosting",
+      "Dedicated travel concierge & emergency stay backup",
+      "Early access to newly verified homes",
+      "Waived platform booking fees",
+    ],
+    popular: false,
+    cta: "Upgrade to Concierge",
+  },
+];
 
 export default function MembershipPage() {
   const [billingCycle, setBillingCycle] = useState<"monthly" | "annual">("annual");
   const [selectedPlan, setSelectedPlan] = useState<string | null>(null);
   const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
+  const [plans, setPlans] = useState<PlanItem[]>(DEFAULT_PLANS);
+  const [isLoading, setIsLoading] = useState(true);
 
-  const plans = [
-    {
-      id: "free",
-      name: "Free Explorer",
-      description: "For curious homeowners beginning their home exchange journey.",
-      priceMonthly: 0,
-      priceAnnual: 0,
-      features: [
-        "Browse all verified homes across India",
-        "1 active home listing",
-        "2 booking requests per month",
-        "Standard member support",
-        "Basic messaging with hosts",
-      ],
-      popular: false,
-      cta: "Current Plan",
-    },
-    {
-      id: "standard",
-      name: "Standard Member",
-      description: "Ideal for frequent travelers, remote professionals, and families.",
-      priceMonthly: 799,
-      priceAnnual: 7990,
-      features: [
-        "Verified Member Identity Badge",
-        "Up to 2 active home listings",
-        "8 booking requests per month",
-        "5% bonus credits earned on every host stay",
-        "Priority customer support & dispute mediation",
-        "Advanced availability calendar filters",
-      ],
-      popular: true,
-      cta: "Join Standard",
-    },
-    {
-      id: "premium",
-      name: "Premium Concierge",
-      description: "The ultimate club privilege for avid globetrotters and multi-homeowners.",
-      priceMonthly: 1499,
-      priceAnnual: 14990,
-      features: [
-        "Elite Verification Status & Featured Listing Badge",
-        "Up to 5 active home listings",
-        "Unlimited monthly booking requests",
-        "10% bonus credits earned on hosting",
-        "Dedicated travel concierge & emergency stay backup",
-        "Early access to newly verified homes",
-        "Waived platform booking fees",
-      ],
-      popular: false,
-      cta: "Upgrade to Concierge",
-    },
-  ];
+  useEffect(() => {
+    async function loadPlans() {
+      try {
+        const res = await fetch("/api/subscriptions");
+        if (res.ok) {
+          const data = await res.json();
+          if (data.success && Array.isArray(data.plans) && data.plans.length > 0) {
+            const mapped: PlanItem[] = data.plans.map((p: any) => {
+              const defaultMatch = DEFAULT_PLANS.find((dp) => dp.id === p.slug);
+              return {
+                id: p.slug || p.id,
+                name: p.name,
+                description:
+                  defaultMatch?.description ||
+                  (p.slug === "free"
+                    ? "For curious homeowners beginning their journey."
+                    : p.slug === "standard"
+                    ? "Ideal for frequent travelers, remote professionals, and families."
+                    : "The ultimate club privilege for avid globetrotters."),
+                priceMonthly: Number(p.price_monthly_inr) || 0,
+                priceAnnual: Number(p.price_annual_inr) || 0,
+                features:
+                  Array.isArray(p.features) && p.features.length > 0
+                    ? p.features
+                    : defaultMatch?.features || [],
+                popular: p.slug === "standard",
+                cta:
+                  p.slug === "free"
+                    ? "Current Plan"
+                    : p.slug === "standard"
+                    ? "Join Standard"
+                    : "Upgrade to Concierge",
+              };
+            });
+            // Ensure stable order (free, standard, premium)
+            mapped.sort((a, b) => a.priceMonthly - b.priceMonthly);
+            setPlans(mapped);
+          }
+        }
+      } catch (err) {
+        console.error("Failed to load live subscription plans from Supabase:", err);
+      } finally {
+        setIsLoading(false);
+      }
+    }
+
+    loadPlans();
+  }, []);
 
   const handleSelectPlan = (planId: string) => {
     setSelectedPlan(planId);
