@@ -50,9 +50,6 @@ export default function Navbar() {
                 <span className="text-2xl font-extrabold tracking-tight text-navy-950 font-serif">
                   Haven<span className="text-teal-600">Swap</span>
                 </span>
-                <span className="text-[10px] uppercase font-bold tracking-widest px-1.5 py-0.5 rounded bg-teal-50 text-teal-700 border border-teal-200">
-                  Club
-                </span>
               </div>
               <span className="text-[11px] text-slate-500 font-medium">Curated Home Exchange</span>
             </div>
@@ -231,7 +228,7 @@ export default function Navbar() {
                 </Link>
                 <Link href="/auth/register">
                   <Button variant="primary" size="sm">
-                    Join Club
+                    Sign Up
                   </Button>
                 </Link>
               </div>
@@ -354,7 +351,7 @@ export default function Navbar() {
                 </Link>
                 <Link href="/auth/register" onClick={() => setMobileMenuOpen(false)}>
                   <Button variant="primary" className="w-full">
-                    Join Club
+                    Sign Up
                   </Button>
                 </Link>
               </div>

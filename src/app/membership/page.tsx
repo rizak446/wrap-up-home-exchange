@@ -54,7 +54,7 @@ const DEFAULT_PLANS: PlanItem[] = [
   {
     id: "premium",
     name: "Premium Concierge",
-    description: "The ultimate club privilege for avid globetrotters and multi-homeowners.",
+    description: "The ultimate membership privilege for avid globetrotters and multi-homeowners.",
     priceMonthly: 1499,
     priceAnnual: 14990,
     features: [
@@ -141,10 +141,10 @@ export default function MembershipPage() {
             Transparent Pricing
           </Badge>
           <h1 className="text-3xl sm:text-5xl font-extrabold font-serif tracking-tight">
-            Club Membership Plans
+            Membership Plans
           </h1>
           <p className="mt-4 text-slate-300 text-base sm:text-lg max-w-2xl mx-auto leading-relaxed">
-            Invest in an annual club membership to unlock verified member badges, expanded listings, and travel freedom across India.
+            Choose a membership plan to unlock verified member badges, expanded listings, and travel freedom across India.
           </p>
 
           {/* Billing Switcher */}
@@ -187,7 +187,7 @@ export default function MembershipPage() {
                 {p.popular && (
                   <div className="absolute -top-3.5 left-1/2 transform -translate-x-1/2">
                     <span className="px-3.5 py-1 rounded-full bg-teal-600 text-white text-[11px] font-extrabold uppercase tracking-wider shadow-md">
-                      Most Popular Club Choice
+                      Most Popular Plan
                     </span>
                   </div>
                 )}

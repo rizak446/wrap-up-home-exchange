@@ -110,7 +110,7 @@ export default function HostingPage() {
       <div>
         <h1 className="text-2xl font-bold text-navy-950 font-serif">Hosting Requests & Reservations</h1>
         <p className="text-xs text-slate-500">
-          Review incoming stay requests from verified club members, accept reservations, and collect hosting rewards.
+          Review incoming stay requests from verified travelers, accept reservations, and collect hosting rewards.
         </p>
       </div>
 

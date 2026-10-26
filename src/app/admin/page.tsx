@@ -259,7 +259,7 @@ export default function AdminDashboardPage() {
       {activeTab === "users" && (
         <div className="rounded-3xl bg-white border border-slate-200/80 shadow-subtle overflow-hidden">
           <div className="p-5 border-b border-slate-100">
-            <h3 className="font-bold text-navy-950 text-sm">Registered Club Members</h3>
+            <h3 className="font-bold text-navy-950 text-sm">Registered Platform Members</h3>
           </div>
 
           <div className="overflow-x-auto">

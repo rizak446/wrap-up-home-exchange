@@ -109,7 +109,7 @@ export default function HomePage() {
         <div className="relative z-10 max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-20 text-center">
           <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-teal-950/80 border border-teal-500/40 text-teal-300 text-xs font-bold tracking-wide uppercase mb-6 backdrop-blur-md">
             <Sparkles className="h-4 w-4 text-teal-400" />
-            <span>The Premier Non-Reciprocal Home Exchange Club</span>
+            <span>The Premier Non-Reciprocal Home Exchange</span>
           </div>
 
           <h1 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight text-white font-serif max-w-4xl mx-auto leading-[1.15]">
@@ -236,7 +236,7 @@ export default function HomePage() {
               </div>
               <h3 className="text-xl font-bold text-navy-950 mb-2">Host in Your City</h3>
               <p className="text-slate-600 text-sm leading-relaxed">
-                List your primary or secondary home in Bhopal, Bengaluru, or Delhi. When a verified club member stays at your property, you earn credits according to your nightly rate.
+                List your primary or secondary home in Bhopal, Bengaluru, or Delhi. When a verified member stays at your property, you earn credits according to your nightly rate.
               </p>
               <div className="mt-6 pt-4 border-t border-slate-200 text-xs font-semibold text-teal-700 flex items-center gap-1">
                 <span>Earn 75 - 120 pts / night</span>
@@ -415,7 +415,7 @@ export default function HomePage() {
                 Designed Around Mutual Respect, Verified Identity, and Data Privacy.
               </h2>
               <p className="mt-4 text-slate-300 text-base leading-relaxed">
-                Hosting a traveler or entering someone’s private home demands uncompromising security standards. HavenSwap operates as an invite-only and verified club, not an anonymous listing board.
+                Hosting a traveler or entering someone’s private home demands uncompromising security standards. HavenSwap operates as a verified home exchange community, not an anonymous listing board.
               </p>
 
               <div className="mt-8 space-y-4">
@@ -545,7 +545,7 @@ export default function HomePage() {
           <div className="mt-8 flex flex-col sm:flex-row items-center justify-center gap-4">
             <Link href="/auth/register">
               <Button variant="primary" size="lg" className="bg-white text-navy-950 hover:bg-slate-100">
-                Join the Club
+                Get Started Today
               </Button>
             </Link>
             <Link href="/homes">

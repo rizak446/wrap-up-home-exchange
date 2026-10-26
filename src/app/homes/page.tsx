@@ -10,20 +10,27 @@ import {
   Star,
   ShieldCheck,
   Coins,
-  Map as MapIcon,
-  List,
-  SlidersHorizontal,
   X,
   Bed,
   Bath,
   Users,
+  LocateFixed,
+  Loader2,
+  Sparkles,
 } from "lucide-react";
 import { Property } from "@/types";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import PropertyMap from "@/components/maps/PropertyMap";
 
-const POPULAR_DESTINATIONS = ["Goa", "Jaipur", "Bhopal", "Bengaluru"];
+const POPULAR_DESTINATIONS = [
+  "All Destinations",
+  "Bhopal",
+  "Goa",
+  "Jaipur",
+  "Bengaluru",
+  "Mumbai",
+  "Delhi",
+];
 
 function ExploreHomesContent() {
   const searchParams = useSearchParams();
@@ -32,8 +39,6 @@ function ExploreHomesContent() {
 
   const [properties, setProperties] = useState<Property[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [viewMode, setViewMode] = useState<"split" | "list" | "map">("split");
-  const [selectedPropertyId, setSelectedPropertyId] = useState<string | null>(null);
 
   // Filters
   const [city, setCity] = useState(initialCity);
@@ -44,6 +49,10 @@ function ExploreHomesContent() {
   const [propertyType, setPropertyType] = useState<string>("all");
   const [verifiedOnly, setVerifiedOnly] = useState<boolean>(false);
   const [sortBy, setSortBy] = useState<"relevance" | "price_asc" | "price_desc" | "newest">("relevance");
+
+  // Geolocation state
+  const [isDetectingLocation, setIsDetectingLocation] = useState(false);
+  const [locationStatus, setLocationStatus] = useState<string | null>(null);
 
   // Keep city in sync if URL search param changes
   useEffect(() => {
@@ -80,6 +89,75 @@ function ExploreHomesContent() {
     sortBy !== "relevance"
   );
 
+  // Geolocation Detection: Auto-detect location without showing maps
+  const handleDetectLocation = () => {
+    if (typeof window === "undefined" || !navigator.geolocation) {
+      setLocationStatus("Geolocation not supported by browser");
+      setTimeout(() => setLocationStatus(null), 3500);
+      return;
+    }
+
+    setIsDetectingLocation(true);
+    setLocationStatus("Detecting location...");
+
+    navigator.geolocation.getCurrentPosition(
+      async (position) => {
+        const { latitude, longitude } = position.coords;
+        try {
+          const res = await fetch(
+            `https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${latitude}&longitude=${longitude}&localityLanguage=en`
+          );
+          if (res.ok) {
+            const data = await res.json();
+            const detectedCity = data.city || data.locality || data.principalSubdivision;
+            if (detectedCity) {
+              setCity(detectedCity);
+              setLocationStatus(`Detected: ${detectedCity}`);
+              setTimeout(() => setLocationStatus(null), 3000);
+              setIsDetectingLocation(false);
+              return;
+            }
+          }
+        } catch {
+          // Geocoder fallback
+        }
+
+        // Proximity calculation against platform destinations
+        const knownCities = [
+          { name: "Bhopal", lat: 23.2599, lon: 77.4126 },
+          { name: "Goa", lat: 15.2993, lon: 74.124 },
+          { name: "Jaipur", lat: 26.9124, lon: 75.7873 },
+          { name: "Bengaluru", lat: 12.9716, lon: 77.5946 },
+          { name: "Mumbai", lat: 19.076, lon: 72.8777 },
+          { name: "Delhi", lat: 28.7041, lon: 77.1025 },
+        ];
+
+        let closest = knownCities[0].name;
+        let minDistance = Infinity;
+
+        for (const c of knownCities) {
+          const dist = Math.hypot(c.lat - latitude, c.lon - longitude);
+          if (dist < minDistance) {
+            minDistance = dist;
+            closest = c.name;
+          }
+        }
+
+        setCity(closest);
+        setLocationStatus(`Detected: ${closest}`);
+        setTimeout(() => setLocationStatus(null), 3000);
+        setIsDetectingLocation(false);
+      },
+      (err) => {
+        console.warn("Location error:", err);
+        setLocationStatus("Please allow location access");
+        setTimeout(() => setLocationStatus(null), 3500);
+        setIsDetectingLocation(false);
+      },
+      { timeout: 7000 }
+    );
+  };
+
   const fetchHomes = async () => {
     setIsLoading(true);
     try {
@@ -109,387 +187,289 @@ function ExploreHomesContent() {
   }, [debouncedCity, guests, minCredits, maxCredits, propertyType, verifiedOnly, sortBy]);
 
   return (
-    <div className="min-h-screen bg-slate-50/60 pb-16">
-      {/* FILTER BAR */}
-      <div className="sticky top-20 z-30 bg-white border-b border-slate-200 px-4 sm:px-6 lg:px-8 py-3.5 shadow-subtle">
-        <div className="max-w-7xl mx-auto flex flex-col md:flex-row md:items-center justify-between gap-3">
-          {/* Quick Search Controls */}
-          <div className="flex flex-wrap items-center gap-2 flex-1">
-            <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-slate-100 border border-slate-200/80 text-sm">
-              <MapPin className="h-4 w-4 text-teal-600" />
-              <input
-                type="text"
-                placeholder="Search city, e.g. Goa, Bhopal..."
-                value={city}
-                onChange={(e) => setCity(e.target.value)}
-                className="bg-transparent font-medium text-navy-950 placeholder-slate-400 focus:outline-none w-40 sm:w-48"
-              />
-              {city && (
-                <button onClick={() => setCity("")} className="text-slate-400 hover:text-slate-600">
-                  <X className="h-3.5 w-3.5" />
+    <div className="min-h-screen bg-slate-50/60 pb-20">
+      {/* TOP SEARCH & FILTER BAR */}
+      <div className="sticky top-20 z-30 bg-white border-b border-slate-200/90 px-4 sm:px-6 lg:px-8 py-4 shadow-subtle backdrop-blur-md">
+        <div className="max-w-7xl mx-auto space-y-3">
+          {/* Main Search Row */}
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">
+            {/* Location Search Input with Direct Auto-Detect */}
+            <div className="flex items-center gap-2 flex-1 max-w-xl">
+              <div className="relative flex-1 flex items-center bg-slate-100/90 hover:bg-slate-100 rounded-2xl border border-slate-200/90 px-3.5 py-2.5 transition-all focus-within:ring-2 focus-within:ring-teal-500/30 focus-within:border-teal-500 focus-within:bg-white shadow-xs">
+                <Search className="h-4 w-4 text-teal-600 flex-shrink-0 mr-2" />
+                <input
+                  type="text"
+                  placeholder="Search city, state or destination..."
+                  value={city}
+                  onChange={(e) => setCity(e.target.value)}
+                  className="bg-transparent font-medium text-navy-950 placeholder-slate-400 focus:outline-none w-full text-sm"
+                />
+                {city && (
+                  <button
+                    onClick={() => setCity("")}
+                    className="text-slate-400 hover:text-slate-600 p-1 mr-1 rounded-full"
+                    title="Clear search"
+                  >
+                    <X className="h-3.5 w-3.5" />
+                  </button>
+                )}
+
+                {/* Detect My Location Button */}
+                <button
+                  type="button"
+                  onClick={handleDetectLocation}
+                  disabled={isDetectingLocation}
+                  className="flex items-center gap-1.5 px-3 py-1 rounded-xl bg-white hover:bg-teal-50 text-teal-700 border border-slate-200 text-xs font-semibold shadow-xs transition-colors flex-shrink-0 cursor-pointer disabled:opacity-50"
+                  title="Detect my current location"
+                >
+                  {isDetectingLocation ? (
+                    <Loader2 className="h-3.5 w-3.5 animate-spin text-teal-600" />
+                  ) : (
+                    <LocateFixed className="h-3.5 w-3.5 text-teal-600" />
+                  )}
+                  <span className="hidden sm:inline">
+                    {isDetectingLocation ? "Detecting..." : "Detect Location"}
+                  </span>
                 </button>
+              </div>
+
+              {locationStatus && (
+                <span className="text-xs font-semibold text-teal-700 bg-teal-50 px-2.5 py-1 rounded-lg border border-teal-200 animate-fade-in flex-shrink-0">
+                  {locationStatus}
+                </span>
               )}
             </div>
 
-            <select
-              value={guests}
-              onChange={(e) => setGuests(Number(e.target.value))}
-              className="px-3 py-1.5 rounded-xl bg-slate-100 border border-slate-200 text-xs font-semibold text-slate-700 cursor-pointer focus:outline-none"
-            >
-              <option value={1}>1+ Guests</option>
-              <option value={2}>2+ Guests</option>
-              <option value={4}>4+ Guests</option>
-              <option value={6}>6+ Guests</option>
-            </select>
+            {/* Quick Filters */}
+            <div className="flex flex-wrap items-center gap-2">
+              <select
+                value={guests}
+                onChange={(e) => setGuests(Number(e.target.value))}
+                className="px-3 py-2 rounded-xl bg-slate-100 border border-slate-200 text-xs font-semibold text-slate-700 cursor-pointer focus:outline-none hover:bg-slate-200/60 transition-colors"
+              >
+                <option value={1}>1+ Guests</option>
+                <option value={2}>2+ Guests</option>
+                <option value={4}>4+ Guests</option>
+                <option value={6}>6+ Guests</option>
+              </select>
 
-            <select
-              value={propertyType}
-              onChange={(e) => setPropertyType(e.target.value)}
-              className="px-3 py-1.5 rounded-xl bg-slate-100 border border-slate-200 text-xs font-semibold text-slate-700 cursor-pointer focus:outline-none"
-            >
-              <option value="all">All Home Types</option>
-              <option value="villa">Villas</option>
-              <option value="apartment">Apartments</option>
-              <option value="independent_house">Independent Houses</option>
-              <option value="penthouse">Penthouses</option>
-            </select>
+              <select
+                value={propertyType}
+                onChange={(e) => setPropertyType(e.target.value)}
+                className="px-3 py-2 rounded-xl bg-slate-100 border border-slate-200 text-xs font-semibold text-slate-700 cursor-pointer focus:outline-none hover:bg-slate-200/60 transition-colors"
+              >
+                <option value="all">All Home Types</option>
+                <option value="villa">Villas</option>
+                <option value="apartment">Apartments</option>
+                <option value="independent_house">Independent Houses</option>
+                <option value="penthouse">Penthouses</option>
+              </select>
 
-            <label className="hidden sm:flex items-center gap-1.5 text-xs font-semibold text-slate-700 cursor-pointer px-2.5 py-1.5 rounded-xl hover:bg-slate-100">
-              <input
-                type="checkbox"
-                checked={verifiedOnly}
-                onChange={(e) => setVerifiedOnly(e.target.checked)}
-                className="rounded border-slate-300 text-teal-600 focus:ring-teal-500"
-              />
-              <span>Verified Only</span>
-            </label>
+              <label className="flex items-center gap-1.5 text-xs font-semibold text-slate-700 cursor-pointer px-3 py-2 rounded-xl bg-slate-100 hover:bg-slate-200/60 border border-slate-200 transition-colors">
+                <input
+                  type="checkbox"
+                  checked={verifiedOnly}
+                  onChange={(e) => setVerifiedOnly(e.target.checked)}
+                  className="rounded border-slate-300 text-teal-600 focus:ring-teal-500"
+                />
+                <span>Verified Only</span>
+              </label>
+
+              <select
+                value={sortBy}
+                onChange={(e) => setSortBy(e.target.value as any)}
+                className="px-3 py-2 rounded-xl bg-white border border-slate-300 text-xs font-bold text-navy-950 focus:outline-none cursor-pointer shadow-xs hover:border-slate-400 transition-colors"
+              >
+                <option value="relevance">Sort: Recommended</option>
+                <option value="price_asc">Credits: Low to High</option>
+                <option value="price_desc">Credits: High to Low</option>
+                <option value="newest">Newest Additions</option>
+              </select>
+            </div>
           </div>
 
-          {/* Right Controls: Sort & Map Toggle */}
-          <div className="flex items-center gap-3">
-            <select
-              value={sortBy}
-              onChange={(e) => setSortBy(e.target.value as any)}
-              className="px-3 py-1.5 rounded-xl bg-white border border-slate-300 text-xs font-bold text-navy-950 focus:outline-none cursor-pointer"
-            >
-              <option value="relevance">Sort: Recommended</option>
-              <option value="price_asc">Credits: Low to High</option>
-              <option value="price_desc">Credits: High to Low</option>
-              <option value="newest">Newest Additions</option>
-            </select>
-
-            {/* View Mode Toggle */}
-            <div className="flex items-center rounded-xl bg-slate-100 p-1 border border-slate-200">
-              <button
-                onClick={() => setViewMode("split")}
-                className={`p-1.5 rounded-lg text-xs font-bold flex items-center gap-1 transition-all ${
-                  viewMode === "split" ? "bg-white text-navy-950 shadow-sm" : "text-slate-500"
-                }`}
-                title="Split Map & List"
-              >
-                <SlidersHorizontal className="h-4 w-4" />
-                <span className="hidden lg:inline">Split</span>
-              </button>
-              <button
-                onClick={() => setViewMode("list")}
-                className={`p-1.5 rounded-lg text-xs font-bold flex items-center gap-1 transition-all ${
-                  viewMode === "list" ? "bg-white text-navy-950 shadow-sm" : "text-slate-500"
-                }`}
-                title="List Only"
-              >
-                <List className="h-4 w-4" />
-                <span className="hidden lg:inline">List</span>
-              </button>
-              <button
-                onClick={() => setViewMode("map")}
-                className={`p-1.5 rounded-lg text-xs font-bold flex items-center gap-1 transition-all ${
-                  viewMode === "map" ? "bg-white text-navy-950 shadow-sm" : "text-slate-500"
-                }`}
-                title="Map Only"
-              >
-                <MapIcon className="h-4 w-4" />
-                <span className="hidden lg:inline">Map</span>
-              </button>
-            </div>
+          {/* Destination Quick Filters Bar */}
+          <div className="flex items-center gap-2 overflow-x-auto pb-1 pt-1 scrollbar-none text-xs">
+            <span className="text-slate-400 font-semibold text-[11px] flex-shrink-0">
+              Popular Destinations:
+            </span>
+            {POPULAR_DESTINATIONS.map((dest) => {
+              const isAll = dest === "All Destinations";
+              const isActive = isAll ? !city : city.toLowerCase() === dest.toLowerCase();
+              return (
+                <button
+                  key={dest}
+                  onClick={() => setCity(isAll ? "" : dest)}
+                  className={`px-3 py-1 rounded-full text-xs font-semibold transition-all flex-shrink-0 cursor-pointer ${
+                    isActive
+                      ? "bg-navy-950 text-white shadow-xs"
+                      : "bg-slate-100 text-slate-600 hover:bg-teal-50 hover:text-teal-800 border border-slate-200/80"
+                  }`}
+                >
+                  {dest}
+                </button>
+              );
+            })}
           </div>
         </div>
       </div>
 
       {/* CONTENT AREA */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-6">
-        {/* SUB-HEADER / ACTIVE SEARCH CONTROLS */}
-        <div className="mb-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs text-slate-500">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-8">
+        {/* Results Header */}
+        <div className="mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs text-slate-500">
           <div className="flex items-center gap-2 flex-wrap">
-            <span>
+            <span className="text-sm">
               Showing <strong className="text-navy-950 font-bold">{properties.length}</strong> verified {properties.length === 1 ? "home" : "homes"}
-              {debouncedCity && <span> in <strong className="text-teal-700 font-bold">"{debouncedCity}"</strong></span>}
+              {debouncedCity && (
+                <span> in <strong className="text-teal-700 font-bold">"{debouncedCity}"</strong></span>
+              )}
             </span>
             {hasActiveFilters && (
               <button
                 onClick={handleResetFilters}
-                className="text-[11px] text-slate-400 hover:text-rose-600 font-medium underline transition-colors ml-1 cursor-pointer"
+                className="text-xs text-slate-400 hover:text-rose-600 font-semibold underline transition-colors ml-2 cursor-pointer"
               >
                 Clear all filters
               </button>
             )}
           </div>
 
-          {/* Right Side: Active Search Badges & Interactive Controls */}
-          <div className="flex flex-wrap items-center gap-2">
-            {city.trim() ? (
-              <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-teal-50 text-teal-900 border border-teal-200 text-xs font-semibold shadow-xs">
-                <MapPin className="h-3.5 w-3.5 text-teal-600" />
-                <span>{city}</span>
-                <button
-                  onClick={() => setCity("")}
-                  className="ml-1 p-0.5 rounded-full hover:bg-teal-200/70 text-teal-700 hover:text-teal-950 transition-colors cursor-pointer"
-                  title="Remove city filter"
-                >
-                  <X className="h-3 w-3" />
-                </button>
-              </div>
-            ) : (
-              <div className="hidden sm:flex items-center gap-1.5 text-xs">
-                <span className="text-slate-400 font-medium text-[11px]">Popular:</span>
-                {POPULAR_DESTINATIONS.map((dest) => (
-                  <button
-                    key={dest}
-                    onClick={() => setCity(dest)}
-                    className="px-2.5 py-0.5 rounded-full bg-slate-100 hover:bg-teal-50 hover:text-teal-700 hover:border-teal-200 text-slate-600 text-[11px] font-semibold border border-slate-200 transition-all cursor-pointer"
-                  >
-                    {dest}
-                  </button>
-                ))}
-              </div>
-            )}
-
-            {/* Live map pin indicator with discreet host privacy shield */}
-            <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-white border border-slate-200 text-slate-600 text-[11px] font-medium shadow-xs">
-              <span className={`w-2 h-2 rounded-full ${properties.length > 0 ? "bg-emerald-500 animate-pulse" : "bg-slate-300"}`} />
-              <span>{properties.length} on map</span>
-              <span
-                className="text-slate-400 hover:text-teal-600 cursor-help ml-0.5 inline-flex items-center"
-                title="Exact street addresses are protected for host privacy until booking is confirmed"
-              >
-                <ShieldCheck className="h-3.5 w-3.5 text-teal-600" />
-              </span>
-            </div>
+          <div className="flex items-center gap-2 text-xs">
+            <span className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-50 text-emerald-800 border border-emerald-200 font-semibold">
+              <ShieldCheck className="h-3.5 w-3.5 text-emerald-600" />
+              <span>100% Identity-Verified Homeowners</span>
+            </span>
           </div>
         </div>
 
-        {/* LAYOUT CONTAINER */}
-        <div
-          className={`grid gap-6 ${
-            viewMode === "split"
-              ? "grid-cols-1 lg:grid-cols-12"
-              : viewMode === "map"
-              ? "grid-cols-1"
-              : "grid-cols-1 md:grid-cols-2 lg:grid-cols-3"
-          }`}
-        >
-          {/* LISTINGS COLUMN */}
-          {viewMode !== "map" && (
-            <div
-              className={`${
-                viewMode === "split"
-                  ? "lg:col-span-7 space-y-4"
-                  : "col-span-full grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6"
-              }`}
-            >
-              {isLoading ? (
-                Array.from({ length: 4 }).map((_, i) => (
-                  <div
-                    key={i}
-                    className="h-64 rounded-3xl bg-slate-200/60 animate-pulse border border-slate-200"
-                  />
-                ))
-              ) : properties.length === 0 ? (
-                <div className="col-span-full p-12 text-center rounded-3xl bg-white border border-slate-200">
-                  <MapPin className="h-10 w-10 text-slate-300 mx-auto mb-3" />
-                  <h3 className="text-lg font-bold text-navy-950">No verified homes match your criteria</h3>
-                  <p className="text-sm text-slate-500 mt-1 max-w-sm mx-auto">
-                    {city
-                      ? `We couldn't find any homes in "${city}". Explore our popular destinations or reset your search.`
-                      : "Try clearing destination keywords, expanding guest capacity, or resetting filters to view all listings."}
-                  </p>
-                  <div className="flex flex-wrap justify-center gap-2 mt-4">
-                    {POPULAR_DESTINATIONS.map((dest) => (
-                      <Button
-                        key={dest}
-                        variant="outline"
-                        size="sm"
-                        onClick={() => {
-                          setCity(dest);
-                          setGuests(1);
-                          setPropertyType("all");
-                          setVerifiedOnly(false);
-                        }}
-                        className="rounded-full text-xs hover:border-teal-400 hover:text-teal-700"
-                      >
-                        Explore {dest}
-                      </Button>
-                    ))}
-                  </div>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="mt-3 text-slate-500 hover:text-navy-950 cursor-pointer"
-                    onClick={handleResetFilters}
-                  >
-                    Reset All Filters
-                  </Button>
-                </div>
-              ) : (
-                properties.map((home) => {
-                  const isSelected = home.id === selectedPropertyId;
-                  return (
-                    <div
-                      key={home.id}
-                      onMouseEnter={() => setSelectedPropertyId(home.id)}
-                      className={`group rounded-3xl bg-white border transition-all duration-300 overflow-hidden flex flex-col sm:flex-row ${
-                        viewMode === "split" ? "h-auto sm:h-52" : "flex-col h-auto"
-                      } ${
-                        isSelected
-                          ? "border-teal-500 ring-2 ring-teal-500/20 shadow-luxury"
-                          : "border-slate-200/90 shadow-subtle hover:border-slate-300 hover:shadow-card"
-                      }`}
-                    >
-                      {/* Photo Thumbnail */}
-                      <Link
-                        href={`/homes/${home.id}`}
-                        className={`relative overflow-hidden bg-slate-100 flex-shrink-0 ${
-                          viewMode === "split" ? "w-full sm:w-56 h-48 sm:h-full" : "w-full aspect-[4/3]"
-                        }`}
-                      >
-                        <img
-                          src={home.images[0]?.image_url}
-                          alt={home.title}
-                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                        />
-                        <div className="absolute top-2.5 left-2.5">
-                          <span className="px-2 py-0.5 rounded-full bg-navy-950/80 backdrop-blur-md text-white text-[10px] font-bold">
-                            {home.property_type.replace("_", " ")}
-                          </span>
-                        </div>
-                      </Link>
-
-                      {/* Content Info */}
-                      <div className="p-4 sm:p-5 flex-1 flex flex-col justify-between">
-                        <div>
-                          <div className="flex items-center justify-between text-xs text-slate-500 mb-1">
-                            <span className="flex items-center gap-1 font-semibold text-slate-700">
-                              <MapPin className="h-3.5 w-3.5 text-teal-600" />
-                              {home.neighbourhood}, {home.city}
-                            </span>
-                            <span className="flex items-center gap-1 font-bold text-amber-500">
-                              <Star className="h-3.5 w-3.5 fill-amber-400 text-amber-400" />
-                              {home.rating} ({home.review_count})
-                            </span>
-                          </div>
-
-                          <Link href={`/homes/${home.id}`}>
-                            <h3 className="font-bold text-navy-950 text-base group-hover:text-teal-700 transition-colors line-clamp-1">
-                              {home.title}
-                            </h3>
-                          </Link>
-
-                          <p className="mt-1 text-xs text-slate-500 line-clamp-2">
-                            {home.description}
-                          </p>
-                        </div>
-
-                        <div className="mt-3 pt-3 border-t border-slate-100 flex items-center justify-between">
-                          <div className="flex items-center gap-3 text-xs text-slate-600">
-                            <span className="flex items-center gap-1">
-                              <Bed className="h-3.5 w-3.5 text-slate-400" />
-                              {home.bedrooms} bed
-                            </span>
-                            <span className="flex items-center gap-1">
-                              <Bath className="h-3.5 w-3.5 text-slate-400" />
-                              {home.bathrooms} bath
-                            </span>
-                            <span className="flex items-center gap-1">
-                              <Users className="h-3.5 w-3.5 text-slate-400" />
-                              {home.max_guests} max
-                            </span>
-                          </div>
-
-                          <div className="text-right">
-                            <span className="text-sm font-extrabold text-teal-700">
-                              {home.credits_per_night} pts
-                            </span>
-                            <span className="text-[11px] text-slate-400 block -mt-0.5">/ night</span>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  );
-                })
-              )}
-            </div>
-          )}
-
-          {/* MAP COLUMN */}
-          {(viewMode === "split" || viewMode === "map") && (
-            <div
-              className={`${
-                viewMode === "split"
-                  ? "lg:col-span-5 sticky top-36 h-[600px]"
-                  : "col-span-full h-[750px]"
-              } relative`}
-            >
-              <PropertyMap
-                properties={properties}
-                selectedPropertyId={selectedPropertyId}
-                onSelectProperty={(id) => setSelectedPropertyId(id)}
-                height="100%"
+        {/* FULL WIDTH LISTINGS GRID */}
+        {isLoading ? (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+            {Array.from({ length: 8 }).map((_, i) => (
+              <div
+                key={i}
+                className="h-80 rounded-3xl bg-slate-200/70 animate-pulse border border-slate-200"
               />
+            ))}
+          </div>
+        ) : properties.length === 0 ? (
+          <div className="p-16 text-center rounded-3xl bg-white border border-slate-200 shadow-subtle max-w-2xl mx-auto my-8">
+            <div className="h-14 w-14 rounded-2xl bg-teal-50 text-teal-600 flex items-center justify-center mx-auto mb-4">
+              <MapPin className="h-7 w-7" />
+            </div>
+            <h3 className="text-xl font-bold text-navy-950 font-serif">
+              No verified homes found {city ? `in "${city}"` : "matching criteria"}
+            </h3>
+            <p className="text-sm text-slate-500 mt-2 max-w-md mx-auto leading-relaxed">
+              We currently have verified home exchanges in Bhopal, Goa, Jaipur, Bengaluru, Mumbai, and Delhi. Try searching one of these popular cities.
+            </p>
+            <div className="flex flex-wrap justify-center gap-2 mt-6">
+              {["Bhopal", "Goa", "Jaipur", "Bengaluru"].map((dest) => (
+                <Button
+                  key={dest}
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    setCity(dest);
+                    setGuests(1);
+                    setPropertyType("all");
+                    setVerifiedOnly(false);
+                  }}
+                  className="rounded-full text-xs hover:border-teal-400 hover:text-teal-700"
+                >
+                  Explore {dest}
+                </Button>
+              ))}
+            </div>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="mt-4 text-slate-500 hover:text-navy-950 cursor-pointer"
+              onClick={handleResetFilters}
+            >
+              Reset All Filters
+            </Button>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+            {properties.map((home) => (
+              <div
+                key={home.id}
+                className="group rounded-3xl bg-white border border-slate-200/90 shadow-subtle hover:border-slate-300 hover:shadow-luxury transition-all duration-300 overflow-hidden flex flex-col justify-between"
+              >
+                {/* Photo Thumbnail */}
+                <Link
+                  href={`/homes/${home.id}`}
+                  className="relative aspect-[4/3] w-full overflow-hidden bg-slate-100 block"
+                >
+                  <img
+                    src={home.images[0]?.image_url}
+                    alt={home.title}
+                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                  />
+                  <div className="absolute top-3 left-3">
+                    <span className="px-2.5 py-1 rounded-full bg-navy-950/80 backdrop-blur-md text-white text-[11px] font-bold shadow-sm capitalize">
+                      {home.property_type.replace("_", " ")}
+                    </span>
+                  </div>
+                  <div className="absolute top-3 right-3">
+                    <span className="px-2.5 py-1 rounded-full bg-white/95 backdrop-blur-md text-navy-950 text-[11px] font-bold shadow-sm flex items-center gap-1">
+                      <Star className="h-3 w-3 fill-amber-400 text-amber-400" />
+                      <span>{home.rating}</span>
+                    </span>
+                  </div>
+                </Link>
 
-              {/* Floating Map Status Overlay */}
-              <div className="absolute top-4 left-4 z-[400] bg-white/95 backdrop-blur-md px-3 py-1.5 rounded-xl shadow-md border border-slate-200 text-xs font-semibold text-navy-950 flex items-center gap-2 pointer-events-auto">
-                <span className={`w-2 h-2 rounded-full ${properties.length > 0 ? "bg-teal-500 animate-pulse" : "bg-slate-300"}`}></span>
-                <span>
-                  {properties.length} {properties.length === 1 ? "home" : "homes"} mapped
-                  {city ? ` in ${city}` : ""}
-                </span>
-              </div>
-
-              {/* Empty state overlay on map when search yields 0 results */}
-              {properties.length === 0 && !isLoading && (
-                <div className="absolute inset-0 bg-slate-900/30 backdrop-blur-[2px] flex items-center justify-center p-6 z-[500] rounded-2xl pointer-events-none">
-                  <div className="bg-white/95 backdrop-blur-md p-6 rounded-2xl shadow-luxury text-center max-w-xs border border-slate-200 pointer-events-auto">
-                    <div className="w-11 h-11 rounded-full bg-teal-50 text-teal-600 flex items-center justify-center mx-auto mb-2.5">
-                      <MapPin className="h-5 w-5 text-teal-600" />
+                {/* Content Details */}
+                <div className="p-5 flex-1 flex flex-col justify-between">
+                  <div>
+                    <div className="flex items-center text-xs font-semibold text-slate-500 mb-1">
+                      <MapPin className="h-3.5 w-3.5 text-teal-600 mr-1 flex-shrink-0" />
+                      <span className="truncate">{home.neighbourhood}, {home.city}</span>
                     </div>
-                    <h4 className="font-bold text-navy-950 text-sm">No map markers found</h4>
-                    <p className="text-xs text-slate-500 mt-1 leading-relaxed">
-                      {city
-                        ? `No verified homes found in "${city}". Try another destination:`
-                        : "No homes match these active filters."}
+
+                    <Link href={`/homes/${home.id}`}>
+                      <h3 className="font-bold text-navy-950 text-base group-hover:text-teal-700 transition-colors line-clamp-1 leading-snug">
+                        {home.title}
+                      </h3>
+                    </Link>
+
+                    <p className="mt-1.5 text-xs text-slate-500 line-clamp-2 leading-relaxed">
+                      {home.description}
                     </p>
-                    <div className="flex flex-wrap justify-center gap-1.5 mt-3">
-                      {POPULAR_DESTINATIONS.map((dest) => (
-                        <button
-                          key={dest}
-                          onClick={() => setCity(dest)}
-                          className="px-2.5 py-1 rounded-lg bg-teal-50 hover:bg-teal-100 text-teal-800 text-xs font-semibold transition-colors cursor-pointer"
-                        >
-                          {dest}
-                        </button>
-                      ))}
+                  </div>
+
+                  <div className="mt-4 pt-3.5 border-t border-slate-100 flex items-center justify-between">
+                    <div className="flex items-center gap-2.5 text-xs text-slate-600">
+                      <span className="flex items-center gap-1 font-medium">
+                        <Bed className="h-3.5 w-3.5 text-slate-400" />
+                        {home.bedrooms}
+                      </span>
+                      <span className="flex items-center gap-1 font-medium">
+                        <Bath className="h-3.5 w-3.5 text-slate-400" />
+                        {home.bathrooms}
+                      </span>
+                      <span className="flex items-center gap-1 font-medium">
+                        <Users className="h-3.5 w-3.5 text-slate-400" />
+                        {home.max_guests}
+                      </span>
                     </div>
-                    <button
-                      onClick={handleResetFilters}
-                      className="mt-3 text-xs text-slate-500 hover:text-navy-950 underline font-medium block mx-auto transition-colors cursor-pointer"
-                    >
-                      Reset all filters
-                    </button>
+
+                    <div className="text-right">
+                      <span className="text-base font-extrabold text-teal-700">
+                        {home.credits_per_night} pts
+                      </span>
+                      <span className="text-[11px] text-slate-400 block -mt-1 font-medium">
+                        / night
+                      </span>
+                    </div>
                   </div>
                 </div>
-              )}
-            </div>
-          )}
-        </div>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );
@@ -499,7 +479,7 @@ export default function ExploreHomesPage() {
   return (
     <Suspense
       fallback={
-        <div className="max-w-7xl mx-auto px-4 py-20 text-center text-sm font-semibold text-slate-500">
+        <div className="max-w-7xl mx-auto px-4 py-24 text-center text-sm font-semibold text-slate-500">
           Loading verified homes...
         </div>
       }

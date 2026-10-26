@@ -30,12 +30,12 @@ export default function HowItWorksPage() {
     {
       num: "03",
       title: "Host Verified Members to Earn Credits",
-      desc: "Accept booking requests from vetted club members when your home is vacant or you are away. When an eligible stay concludes, your credit wallet is rewarded automatically.",
+      desc: "Accept booking requests from vetted members when your home is vacant or you are away. When an eligible stay concludes, your credit wallet is rewarded automatically.",
     },
     {
       num: "04",
       title: "Explore Curated Homes Across India & Beyond",
-      desc: "Want to holiday in Goa? Search by date, guest count, and amenities. Public maps show approximate neighbourhoods so host addresses remain confidential.",
+      desc: "Want to holiday in Goa? Search by date, guest count, and amenities. Approximate neighbourhood listings ensure host addresses remain strictly confidential.",
     },
     {
       num: "05",

@@ -240,7 +240,7 @@ export default function AddHomePage() {
         {currentStep === 1 && (
           <div className="space-y-4">
             <h2 className="text-2xl font-bold text-navy-950 font-serif">Basic Property Information</h2>
-            <p className="text-xs text-slate-500">Provide an evocative title and describe your home to fellow club members.</p>
+            <p className="text-xs text-slate-500">Provide an evocative title and describe your home to fellow members and travelers.</p>
 
             <div>
               <label className="block text-xs font-bold text-navy-950 mb-1">Listing Title</label>

@@ -17,7 +17,7 @@ export default function Footer() {
               </span>
             </Link>
             <p className="text-slate-500 text-sm leading-relaxed max-w-sm">
-              The premier, trust-anchored home exchange club. Swap access to verified homes, host travelers to earn credits, and explore Bhopal, Goa, Jaipur, Bengaluru, and beyond without prohibitive lodging bills.
+              The premier, trust-anchored home exchange platform. Swap access to verified homes, host travelers to earn credits, and explore Bhopal, Goa, Jaipur, Bengaluru, and beyond without prohibitive lodging bills.
             </p>
             <div className="flex items-center gap-2 text-xs text-slate-500 pt-2">
               <ShieldCheck className="h-4 w-4 text-teal-600" />
@@ -77,7 +77,7 @@ export default function Footer() {
               </li>
               <li>
                 <Link href="/membership" className="hover:text-teal-600 transition-colors">
-                  Club Membership Plans
+                  Membership Plans
                 </Link>
               </li>
               <li>

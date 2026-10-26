@@ -38,7 +38,6 @@ import { useAuth } from "@/context/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Modal } from "@/components/ui/modal";
-import PropertyMap from "@/components/maps/PropertyMap";
 import { calculateNights, calculateTotalCredits } from "@/lib/utils";
 
 export default function HomeDetailsPage() {
@@ -369,14 +368,36 @@ export default function HomeDetailsPage() {
                 </div>
               </div>
 
-              <div className="h-80 w-full rounded-3xl overflow-hidden border border-slate-200">
-                <PropertyMap
-                  properties={[property]}
-                  center={[property.latitude, property.longitude]}
-                  zoom={13}
-                  height="100%"
-                  isApproximateRadius={true}
-                />
+              {/* Area Highlights Card */}
+              <div className="rounded-3xl p-6 bg-slate-50 border border-slate-200/90 space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div className="p-4 rounded-2xl bg-white border border-slate-200/80 shadow-xs">
+                    <div className="flex items-center gap-2 text-teal-700 font-bold text-xs mb-1">
+                      <MapPin className="h-4 w-4" />
+                      <span>Curated Destination</span>
+                    </div>
+                    <p className="text-sm font-bold text-navy-950">{property.neighbourhood}</p>
+                    <p className="text-xs text-slate-500 mt-0.5">{property.city}, {property.state}</p>
+                  </div>
+
+                  <div className="p-4 rounded-2xl bg-white border border-slate-200/80 shadow-xs">
+                    <div className="flex items-center gap-2 text-teal-700 font-bold text-xs mb-1">
+                      <Compass className="h-4 w-4" />
+                      <span>Neighbourhood Setting</span>
+                    </div>
+                    <p className="text-sm font-bold text-navy-950">Quiet Residential Haven</p>
+                    <p className="text-xs text-slate-500 mt-0.5">Vetted community with easy access to amenities</p>
+                  </div>
+
+                  <div className="p-4 rounded-2xl bg-white border border-slate-200/80 shadow-xs">
+                    <div className="flex items-center gap-2 text-teal-700 font-bold text-xs mb-1">
+                      <ShieldCheck className="h-4 w-4" />
+                      <span>Host Verification</span>
+                    </div>
+                    <p className="text-sm font-bold text-navy-950">100% ID & Residence Verified</p>
+                    <p className="text-xs text-slate-500 mt-0.5">Inspected ownership and house rules</p>
+                  </div>
+                </div>
               </div>
             </div>
 
