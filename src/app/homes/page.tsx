@@ -396,17 +396,17 @@ function ExploreHomesContent() {
             {properties.map((home) => (
               <div
                 key={home.id}
-                className="group rounded-3xl bg-white border border-slate-200/90 shadow-subtle hover:border-slate-300 hover:shadow-luxury transition-all duration-300 overflow-hidden flex flex-col justify-between"
+                className="group watery-card rounded-3xl bg-white border border-slate-200/90 shadow-subtle hover:border-slate-300 hover:shadow-luxury transition-all duration-200 overflow-hidden flex flex-col justify-between"
               >
                 {/* Photo Thumbnail */}
                 <Link
                   href={`/homes/${home.id}`}
-                  className="relative aspect-[4/3] w-full overflow-hidden bg-slate-100 block"
+                  className="relative aspect-[4/3] w-full overflow-hidden bg-slate-100 block cursor-pointer"
                 >
                   <img
-                    src={home.images[0]?.image_url}
+                    src={home.images?.[0]?.image_url || "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=1200&auto=format&fit=crop&q=80"}
                     alt={home.title}
-                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                   />
                   <div className="absolute top-3 left-3">
                     <span className="px-2.5 py-1 rounded-full bg-navy-950/80 backdrop-blur-md text-white text-[11px] font-bold shadow-sm capitalize">

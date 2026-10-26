@@ -59,6 +59,7 @@ export default function HomeDetailsPage() {
   const [isSubmittingBooking, setIsSubmittingBooking] = useState(false);
   const [bookingError, setBookingError] = useState<string | null>(null);
   const [bookingSuccess, setBookingSuccess] = useState(false);
+  const [createdBooking, setCreatedBooking] = useState<any>(null);
 
   useEffect(() => {
     async function loadData() {
@@ -139,6 +140,7 @@ export default function HomeDetailsPage() {
       if (!res.ok || !data.success) {
         setBookingError(data.error || "Unable to submit booking request");
       } else {
+        setCreatedBooking(data.booking);
         setBookingSuccess(true);
         await refreshCredits();
       }
@@ -580,26 +582,87 @@ export default function HomeDetailsPage() {
         description={`Request to stay at "${property.title}" in ${property.city}`}
       >
         {bookingSuccess ? (
-          <div className="text-center py-6 space-y-4">
-            <div className="h-14 w-14 rounded-full bg-emerald-50 text-emerald-600 flex items-center justify-center mx-auto ring-8 ring-emerald-50/50">
-              <CheckCircle2 className="h-8 w-8" />
+          <div className="py-2 space-y-4">
+            <div className="text-center space-y-2">
+              <div className="h-14 w-14 rounded-full bg-emerald-50 text-emerald-600 flex items-center justify-center mx-auto ring-8 ring-emerald-50/50">
+                <CheckCircle2 className="h-8 w-8" />
+              </div>
+              <h3 className="text-xl font-bold text-navy-950 font-serif">Stay Request Confirmed! 🎉</h3>
+              <p className="text-xs text-slate-500 max-w-sm mx-auto">
+                Your reservation request is active. Credits are safely locked in escrow until the stay concludes.
+              </p>
             </div>
-            <h3 className="text-xl font-bold text-navy-950">Stay Request Submitted! 🎉</h3>
-            <p className="text-xs text-slate-600 max-w-sm mx-auto leading-relaxed">
-              We have reserved <strong>{totalCredits} credits</strong> in secure escrow. The host (<strong>{property.host?.full_name}</strong>) has been notified and has 48 hours to confirm.
-            </p>
-            <div className="pt-4 flex items-center justify-center gap-3">
-              <Link href="/dashboard/trips">
-                <Button variant="primary" size="md">
-                  View My Trips
+
+            {/* Booking Details Card */}
+            <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200 text-xs space-y-3">
+              <div className="flex items-center justify-between pb-2 border-b border-slate-200/80">
+                <span className="text-slate-500">Booking Reference:</span>
+                <span className="font-mono font-bold text-navy-950 bg-white px-2 py-0.5 rounded-md border border-slate-200">
+                  {createdBooking?.id ? String(createdBooking.id).slice(0, 18) : "RES-CONFIRMED"}
+                </span>
+              </div>
+
+              <div className="flex items-center gap-3">
+                <img
+                  src={property.images[0]?.image_url || "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=400"}
+                  alt={property.title}
+                  className="h-12 w-16 object-cover rounded-xl"
+                />
+                <div className="flex-1 overflow-hidden">
+                  <h4 className="font-bold text-navy-950 truncate">{property.title}</h4>
+                  <p className="text-slate-500 text-[11px]">{property.city}, {property.state}</p>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-2 pt-1 border-t border-slate-200/80">
+                <div>
+                  <span className="text-slate-400 block text-[10px] uppercase font-bold tracking-wider">Stay Dates</span>
+                  <span className="font-bold text-navy-950 text-xs">{checkIn} → {checkOut}</span>
+                </div>
+                <div>
+                  <span className="text-slate-400 block text-[10px] uppercase font-bold tracking-wider">Duration & Escrow</span>
+                  <span className="font-bold text-teal-700 text-xs">{nights} Nights ({totalCredits} pts held)</span>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-2 pt-2 border-t border-slate-200/80 text-[11px] text-slate-600">
+                <span className="text-slate-400">Host:</span>
+                <span className="font-semibold text-navy-950">{property.host?.full_name || "Nancy (Exchange Host)"}</span>
+                <span className="ml-auto text-amber-700 font-bold bg-amber-50 px-2 py-0.5 rounded-full border border-amber-200 text-[10px]">
+                  Pending Host Approval
+                </span>
+              </div>
+            </div>
+
+            {/* Where to find it banner */}
+            <div className="p-3.5 rounded-xl bg-teal-50/80 border border-teal-200 text-xs text-teal-900 flex items-start gap-2.5">
+              <Compass className="h-4 w-4 text-teal-600 mt-0.5 flex-shrink-0" />
+              <div>
+                <p className="font-bold text-teal-950">Where are my booking details saved?</p>
+                <p className="text-[11px] text-teal-800 leading-relaxed mt-0.5">
+                  This reservation is saved directly to your account. You can view full dates, message the host, and see unlocked street addresses inside <strong>My Trips</strong> anytime!
+                </p>
+              </div>
+            </div>
+
+            {/* CTAs */}
+            <div className="pt-2 space-y-2">
+              <Link href="/dashboard/trips" className="block w-full">
+                <Button variant="teal" size="md" className="w-full justify-center">
+                  <Compass className="h-4 w-4 mr-1.5" />
+                  View in My Trips & Bookings Dashboard
                 </Button>
               </Link>
               <Button
                 variant="outline"
                 size="md"
-                onClick={() => setIsBookingModalOpen(false)}
+                className="w-full justify-center"
+                onClick={() => {
+                  setIsBookingModalOpen(false);
+                  setBookingSuccess(false);
+                }}
               >
-                Close
+                Close & Continue Browsing
               </Button>
             </div>
           </div>

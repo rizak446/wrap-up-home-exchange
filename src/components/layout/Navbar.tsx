@@ -96,6 +96,16 @@ export default function Navbar() {
                   <span>{creditAccount?.available_balance ?? 0} pts</span>
                 </Link>
 
+                {/* My Trips Direct Access */}
+                <Link
+                  href="/dashboard/trips"
+                  className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-slate-100 hover:bg-teal-50 border border-slate-200 hover:border-teal-300 text-slate-800 hover:text-teal-900 transition-all text-xs font-bold active:scale-95"
+                  title="View your booked stays and reservations"
+                >
+                  <Compass className="h-4 w-4 text-teal-600" />
+                  <span>My Trips</span>
+                </Link>
+
                 {/* Notifications Link */}
                 <Link
                   href="/dashboard/notifications"

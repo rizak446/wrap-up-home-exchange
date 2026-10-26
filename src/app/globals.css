@@ -1,5 +1,4 @@
 @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Playfair+Display:ital,wght@0,600;0,700;1,600&display=swap');
-@import "leaflet/dist/leaflet.css";
 
 @tailwind base;
 @tailwind components;
@@ -104,4 +103,35 @@
 }
 ::-webkit-scrollbar-thumb:hover {
   background: #94a3b8;
+}
+
+/* Fluid Watery Tactile Click & Instant Responsiveness */
+html {
+  scroll-behavior: smooth;
+}
+
+button, a, [role="button"], input[type="submit"], input[type="button"], select {
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+}
+
+/* Tactile squish & liquid spring feedback */
+button:not(:disabled):active,
+a.watery-btn:active,
+.watery-click:active {
+  transform: scale(0.96) translateY(1px);
+  filter: brightness(0.96);
+  transition: transform 90ms cubic-bezier(0.2, 0.9, 0.3, 1.2), filter 90ms ease;
+}
+
+/* Fluid card dynamics */
+.watery-card {
+  transition: transform 180ms cubic-bezier(0.2, 0.8, 0.2, 1), box-shadow 180ms ease;
+}
+.watery-card:hover {
+  transform: translateY(-2px);
+}
+.watery-card:active {
+  transform: scale(0.985) translateY(0px);
 }

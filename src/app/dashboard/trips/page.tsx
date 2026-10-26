@@ -159,16 +159,20 @@ export default function MyTripsPage() {
         <div className="space-y-6">
           {trips.map((trip) => {
             const isConfirmed = ["confirmed", "completed"].includes(trip.status);
+            const coverImage =
+              trip.property?.images?.[0]?.image_url ||
+              "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=1200&auto=format&fit=crop&q=80";
+
             return (
               <div
                 key={trip.id}
-                className="rounded-3xl bg-white border border-slate-200/80 shadow-subtle overflow-hidden flex flex-col md:flex-row"
+                className="rounded-3xl bg-white border border-slate-200/80 shadow-subtle overflow-hidden flex flex-col md:flex-row hover:border-slate-300 transition-all"
               >
                 {/* Photo Thumbnail */}
                 <div className="md:w-64 aspect-[4/3] md:aspect-auto bg-slate-100 relative flex-shrink-0">
                   <img
-                    src={trip.property?.images[0]?.image_url}
-                    alt={trip.property?.title}
+                    src={coverImage}
+                    alt={trip.property?.title || "Property"}
                     className="w-full h-full object-cover"
                   />
                   <div className="absolute top-3 left-3">
@@ -183,7 +187,7 @@ export default function MyTripsPage() {
                           : "default"
                       }
                     >
-                      {trip.status}
+                      {trip.status === "requested" ? "Awaiting Host" : trip.status}
                     </Badge>
                   </div>
                 </div>
@@ -194,11 +198,11 @@ export default function MyTripsPage() {
                     <div className="flex flex-wrap items-center justify-between gap-2">
                       <Link href={`/homes/${trip.property_id}`}>
                         <h3 className="font-bold text-navy-950 text-base hover:text-teal-700 transition-colors">
-                          {trip.property?.title}
+                          {trip.property?.title || "Home Exchange Stay"}
                         </h3>
                       </Link>
                       <div className="text-sm font-extrabold text-teal-700">
-                        {trip.total_credits} credits escrowed
+                        {trip.total_credits} credits held in escrow
                       </div>
                     </div>
 
@@ -206,6 +210,18 @@ export default function MyTripsPage() {
                       <span><strong>Check-in:</strong> {trip.check_in}</span>
                       <span><strong>Check-out:</strong> {trip.check_out} ({trip.nights} nights)</span>
                       <span><strong>Guests:</strong> {trip.guest_count}</span>
+                    </div>
+
+                    {/* Host Profile Info */}
+                    <div className="flex items-center gap-2 pt-1 pb-1">
+                      <span className="text-xs text-slate-500 font-medium">Host:</span>
+                      <img
+                        src={trip.host?.avatar_url || "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100"}
+                        alt=""
+                        className="h-5 w-5 rounded-full object-cover ring-1 ring-teal-500"
+                      />
+                      <span className="text-xs font-bold text-navy-950">{trip.host?.full_name || "Nancy (Exchange Host)"}</span>
+                      <span className="text-[11px] text-slate-400">({trip.property?.city || "India"})</span>
                     </div>
 
                     {/* ADDRESS PRIVACY SHIELD / UNLOCK BANNER */}
@@ -216,16 +232,16 @@ export default function MyTripsPage() {
                             <Unlock className="h-4 w-4 text-emerald-600" />
                             <span>Stay Confirmed — Exact Physical Address Unlocked:</span>
                           </div>
-                          <p className="font-semibold">{trip.property?.exact_address}</p>
+                          <p className="font-semibold">{trip.property?.exact_address || `${trip.property?.city}, ${trip.property?.state}`}</p>
                           <div className="flex items-center gap-3 text-[11px] text-emerald-700 pt-1">
-                            <span>Host Contact: {trip.host?.phone || "+91 98260 11223"} ({trip.host?.full_name})</span>
+                            <span>Host Contact: {trip.host?.phone || "+91 98260 11223"} ({trip.host?.full_name || "Host"})</span>
                           </div>
                         </div>
                       ) : (
                         <div className="p-3.5 rounded-2xl bg-slate-100 border border-slate-200 text-xs text-slate-500 flex items-center gap-2">
                           <Lock className="h-4 w-4 text-slate-400 flex-shrink-0" />
                           <span>
-                            <strong>Address Protected:</strong> Exact physical street address and host direct phone will unlock automatically once your host confirms this request.
+                            <strong>Address Protected:</strong> Exact physical street address and host phone will unlock automatically once your host ({trip.host?.full_name || "the host"}) confirms this stay request.
                           </span>
                         </div>
                       )}
