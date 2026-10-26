@@ -38,6 +38,7 @@ export default function CreditWalletPage() {
         setIsLoading(false);
       }
     }
+    refreshCredits();
     loadWallet();
   }, [currentUser]);
 
@@ -68,7 +69,7 @@ export default function CreditWalletPage() {
               Available to Spend
             </span>
             <span className="text-3xl font-extrabold font-serif text-white mt-1 block">
-              {creditAccount?.available_balance ?? 350} pts
+              {creditAccount?.available_balance ?? 0} pts
             </span>
             <span className="text-[10px] text-slate-400">Immediate booking power</span>
           </div>
@@ -88,7 +89,7 @@ export default function CreditWalletPage() {
               Lifetime Earned
             </span>
             <span className="text-3xl font-extrabold font-serif text-white mt-1 block">
-              {creditAccount?.lifetime_earned ?? 350} pts
+              {creditAccount?.lifetime_earned ?? 0} pts
             </span>
             <span className="text-[10px] text-slate-400">From hosting & rewards</span>
           </div>

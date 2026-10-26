@@ -41,10 +41,39 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const fetchCredits = async (userId: string) => {
     try {
-      const res = await fetch(`/api/credits?userId=${userId}`);
+      // 1. Authoritative direct query from Supabase credit_accounts table
+      const supabase = createClient();
+      const { data: account, error } = await supabase
+        .from("credit_accounts")
+        .select("*")
+        .eq("user_id", userId)
+        .maybeSingle();
+
+      if (account) {
+        setCreditAccount({
+          id: account.id,
+          user_id: account.user_id,
+          available_balance: Number(account.available_balance ?? 0),
+          pending_balance: Number(account.pending_balance ?? 0),
+          reserved_balance: Number(account.reserved_balance ?? 0),
+          lifetime_earned: Number(account.lifetime_earned ?? 0),
+          lifetime_spent: Number(account.lifetime_spent ?? 0),
+          updated_at: account.updated_at,
+        });
+        return;
+      }
+    } catch (e) {
+      console.warn("Direct Supabase credit query warning:", e);
+    }
+
+    // 2. Fallback to API route
+    try {
+      const res = await fetch(`/api/credits?userId=${userId}`, { cache: "no-store" });
       if (res.ok) {
         const data = await res.json();
-        setCreditAccount(data.account);
+        if (data.account) {
+          setCreditAccount(data.account);
+        }
       }
     } catch (e) {
       console.error("Failed to load credits", e);
@@ -70,6 +99,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
           if (profile) {
             setCurrentUser(profile);
+            if (typeof window !== "undefined") {
+              localStorage.setItem("haven_current_user", JSON.stringify(profile));
+            }
             setIsDemoUser(false);
             await fetchCredits(session.user.id);
             setIsLoading(false);
@@ -95,6 +127,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
               const activeProfile = profile || savedProfile;
               setCurrentUser(activeProfile);
+              if (typeof window !== "undefined") {
+                localStorage.setItem("haven_current_user", JSON.stringify(activeProfile));
+              }
               setIsDemoUser(false);
               await fetchCredits(activeProfile.id);
               setIsLoading(false);
@@ -115,6 +150,34 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     initAuth();
   }, []);
+
+  // Auto-sync profile & credits whenever the window regains focus (e.g. after editing in Supabase Table Editor)
+  useEffect(() => {
+    const handleSyncOnFocus = async () => {
+      if (!currentUser?.id) return;
+      try {
+        const supabase = createClient();
+        const { data: profile } = await supabase
+          .from("profiles")
+          .select("*")
+          .eq("id", currentUser.id)
+          .maybeSingle();
+
+        if (profile) {
+          setCurrentUser(profile);
+          if (typeof window !== "undefined") {
+            localStorage.setItem("haven_current_user", JSON.stringify(profile));
+          }
+        }
+        await fetchCredits(currentUser.id);
+      } catch (err) {
+        console.warn("Auto-sync error on focus:", err);
+      }
+    };
+
+    window.addEventListener("focus", handleSyncOnFocus);
+    return () => window.removeEventListener("focus", handleSyncOnFocus);
+  }, [currentUser?.id]);
 
   const loginAs = async (userId: string) => {
     setIsLoading(true);

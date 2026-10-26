@@ -47,6 +47,20 @@ declare global {
   } | undefined;
 }
 
+async function getSupabaseServerClient() {
+  try {
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+    const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+    if (supabaseUrl && supabaseAnonKey && !supabaseUrl.includes("placeholder")) {
+      const { createClient } = await import("@supabase/supabase-js");
+      return createClient(supabaseUrl, supabaseAnonKey);
+    }
+  } catch (err) {
+    console.warn("Failed to initialize Supabase server client:", err);
+  }
+  return null;
+}
+
 function getStore() {
   if (!global.__HAVEN_DB__) {
     global.__HAVEN_DB__ = {
@@ -330,6 +344,78 @@ export const repository = {
 
     store.properties.unshift(newProperty);
 
+    // Sync to Supabase properties table if UUID host
+    const isUUID = (str: string) =>
+      /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(str);
+
+    const sb = await getSupabaseServerClient();
+    if (sb && isUUID(hostId)) {
+      try {
+        const propUuid = typeof crypto !== "undefined" && crypto.randomUUID ? crypto.randomUUID() : undefined;
+        const dbPayload: any = {
+          host_id: hostId,
+          title: newProperty.title,
+          description: newProperty.description,
+          property_type: newProperty.property_type,
+          bedrooms: newProperty.bedrooms,
+          beds: newProperty.beds,
+          bathrooms: newProperty.bathrooms,
+          max_guests: newProperty.max_guests,
+          square_feet: newProperty.square_feet || null,
+          floor_number: newProperty.floor_number || null,
+          country: newProperty.country,
+          state: newProperty.state,
+          city: newProperty.city,
+          neighbourhood: newProperty.neighbourhood,
+          postal_code: newProperty.postal_code || null,
+          exact_address: newProperty.exact_address,
+          latitude: newProperty.latitude,
+          longitude: newProperty.longitude,
+          credits_per_night: newProperty.credits_per_night,
+          min_stay_nights: newProperty.min_stay_nights,
+          max_stay_nights: newProperty.max_stay_nights,
+          advance_booking_days: newProperty.advance_booking_days,
+          house_rules: newProperty.house_rules || null,
+          check_in_start: newProperty.check_in_start,
+          check_out_end: newProperty.check_out_end,
+          cleaning_expectations: newProperty.cleaning_expectations || null,
+          pet_policy: newProperty.pet_policy,
+          smoking_policy: newProperty.smoking_policy,
+          status: "published", // Auto-publish so immediately visible in Explore
+          verification_status: "verified",
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        };
+        if (propUuid) dbPayload.id = propUuid;
+
+        const { data: insertedProp, error: propErr } = await sb
+          .from("properties")
+          .insert(dbPayload)
+          .select()
+          .single();
+
+        if (!propErr && insertedProp) {
+          newProperty.id = insertedProp.id;
+          newProperty.status = "published";
+          newProperty.verification_status = "verified";
+          if (newProperty.images && newProperty.images.length > 0) {
+            await sb.from("property_images").insert(
+              newProperty.images.map((img, idx) => ({
+                property_id: insertedProp.id,
+                image_url: img.image_url,
+                caption: img.caption || "Property photo",
+                display_order: idx + 1,
+                is_cover: idx === 0,
+                created_at: new Date().toISOString(),
+              }))
+            );
+          }
+        }
+      } catch (e) {
+        console.warn("Failed to sync property to Supabase:", e);
+      }
+    }
+
     // Audit log
     store.auditLogs.unshift({
       id: `audit-${Date.now()}`,
@@ -423,8 +509,69 @@ export const repository = {
   // ===================== CREDIT LEDGER & WALLET =====================
   async getCreditAccount(userId: string): Promise<CreditAccount> {
     const store = getStore();
+
+    // 1. Live Supabase Query (authoritative source)
+    const sb = await getSupabaseServerClient();
+    if (sb) {
+      try {
+        const { data: dbAccount, error } = await sb
+          .from("credit_accounts")
+          .select("*")
+          .eq("user_id", userId)
+          .maybeSingle();
+
+        if (dbAccount) {
+          const liveAccount: CreditAccount = {
+            id: dbAccount.id,
+            user_id: dbAccount.user_id,
+            available_balance: Number(dbAccount.available_balance ?? 0),
+            pending_balance: Number(dbAccount.pending_balance ?? 0),
+            reserved_balance: Number(dbAccount.reserved_balance ?? 0),
+            lifetime_earned: Number(dbAccount.lifetime_earned ?? 0),
+            lifetime_spent: Number(dbAccount.lifetime_spent ?? 0),
+            updated_at: dbAccount.updated_at || new Date().toISOString(),
+          };
+          store.creditAccounts[userId] = liveAccount;
+          return liveAccount;
+        } else {
+          // If profile exists in Supabase, create an initial account row
+          const newAccount = {
+            user_id: userId,
+            available_balance: 150,
+            pending_balance: 0,
+            reserved_balance: 0,
+            lifetime_earned: 150,
+            lifetime_spent: 0,
+            updated_at: new Date().toISOString(),
+          };
+          const { data: createdAcc } = await sb
+            .from("credit_accounts")
+            .insert(newAccount)
+            .select()
+            .maybeSingle();
+
+          if (createdAcc) {
+            const accObj: CreditAccount = {
+              id: createdAcc.id,
+              user_id: createdAcc.user_id,
+              available_balance: Number(createdAcc.available_balance ?? 150),
+              pending_balance: Number(createdAcc.pending_balance ?? 0),
+              reserved_balance: Number(createdAcc.reserved_balance ?? 0),
+              lifetime_earned: Number(createdAcc.lifetime_earned ?? 150),
+              lifetime_spent: Number(createdAcc.lifetime_spent ?? 0),
+              updated_at: createdAcc.updated_at || new Date().toISOString(),
+            };
+            store.creditAccounts[userId] = accObj;
+            return accObj;
+          }
+        }
+      } catch (err) {
+        console.warn("Supabase getCreditAccount warning:", err);
+      }
+    }
+
+    // 2. In-memory fallback
     if (!store.creditAccounts[userId]) {
-      // Create fresh default account with 150 points
       store.creditAccounts[userId] = {
         id: `acc-${userId}`,
         user_id: userId,
@@ -435,29 +582,50 @@ export const repository = {
         lifetime_spent: 0,
         updated_at: new Date().toISOString(),
       };
-      // Log initial welcome bonus
-      store.creditTransactions.unshift({
-        id: `tx-${Date.now()}`,
-        user_id: userId,
-        transaction_type: "welcome_bonus",
-        amount: 150,
-        balance_after: 150,
-        status: "completed",
-        description: "Welcome bonus upon registration",
-        reference_code: `WEL-${Math.floor(10000000 + Math.random() * 90000000)}`,
-        created_at: new Date().toISOString(),
-      });
     }
     return store.creditAccounts[userId];
   },
 
   async getCreditTransactions(userId: string): Promise<CreditTransaction[]> {
     const store = getStore();
+
+    const sb = await getSupabaseServerClient();
+    if (sb) {
+      try {
+        const { data } = await sb
+          .from("credit_transactions")
+          .select("*")
+          .eq("user_id", userId)
+          .order("created_at", { ascending: false });
+
+        if (data && data.length > 0) {
+          return data;
+        }
+      } catch (err) {
+        console.warn("Supabase getCreditTransactions warning:", err);
+      }
+    }
+
     return store.creditTransactions.filter((tx) => tx.user_id === userId);
   },
 
   async getAllCreditTransactions(): Promise<CreditTransaction[]> {
     const store = getStore();
+    const sb = await getSupabaseServerClient();
+    if (sb) {
+      try {
+        const { data } = await sb
+          .from("credit_transactions")
+          .select("*")
+          .order("created_at", { ascending: false });
+
+        if (data && data.length > 0) {
+          return data;
+        }
+      } catch (err) {
+        console.warn("Supabase getAllCreditTransactions warning:", err);
+      }
+    }
     return store.creditTransactions;
   },
 
@@ -481,6 +649,34 @@ export const repository = {
       account.lifetime_spent += Math.abs(params.amount);
     }
     account.updated_at = new Date().toISOString();
+
+    const sb = await getSupabaseServerClient();
+    if (sb) {
+      try {
+        await sb
+          .from("credit_accounts")
+          .update({
+            available_balance: account.available_balance,
+            lifetime_earned: account.lifetime_earned,
+            lifetime_spent: account.lifetime_spent,
+            updated_at: account.updated_at,
+          })
+          .eq("user_id", params.userId);
+
+        await sb.from("credit_transactions").insert({
+          user_id: params.userId,
+          transaction_type: "admin_adjustment",
+          amount: params.amount,
+          balance_after: account.available_balance,
+          status: "completed",
+          description: `Administrative adjustment: ${params.reason}`,
+          reference_code: `ADM-${Math.floor(10000000 + Math.random() * 90000000)}`,
+          created_at: new Date().toISOString(),
+        });
+      } catch (e) {
+        console.warn("Failed to sync admin adjustment to Supabase:", e);
+      }
+    }
 
     const tx: CreditTransaction = {
       id: `tx-${Date.now()}`,

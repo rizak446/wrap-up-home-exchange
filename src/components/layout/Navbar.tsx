@@ -93,7 +93,7 @@ export default function Navbar() {
                   className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-gradient-to-r from-teal-50 to-emerald-50 border border-teal-200 text-teal-900 hover:shadow-sm transition-all text-xs font-bold"
                 >
                   <Coins className="h-4 w-4 text-teal-600" />
-                  <span>{creditAccount ? creditAccount.available_balance : 350} pts</span>
+                  <span>{creditAccount?.available_balance ?? 0} pts</span>
                 </Link>
 
                 {/* Notifications Link */}
@@ -243,7 +243,7 @@ export default function Navbar() {
                 className="flex items-center gap-1 px-2.5 py-1 rounded-full bg-teal-50 text-teal-800 text-xs font-bold"
               >
                 <Coins className="h-3.5 w-3.5 text-teal-600" />
-                <span>{creditAccount?.available_balance || 350}</span>
+                <span>{creditAccount?.available_balance ?? 0}</span>
               </Link>
             )}
             <button
@@ -291,7 +291,7 @@ export default function Navbar() {
                   />
                   <div>
                     <div className="font-bold text-navy-950">{currentUser.full_name}</div>
-                    <div className="text-xs text-teal-600 font-semibold">{creditAccount?.available_balance || 350} credits</div>
+                    <div className="text-xs text-teal-600 font-semibold">{creditAccount?.available_balance ?? 0} credits</div>
                   </div>
                 </div>
                 <Link

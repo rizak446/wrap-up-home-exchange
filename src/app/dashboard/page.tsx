@@ -120,7 +120,7 @@ export default function DashboardOverviewPage() {
           </div>
           <div>
             <span className="text-3xl font-extrabold text-navy-950 font-serif">
-              {creditAccount?.available_balance ?? 350}
+              {creditAccount?.available_balance ?? 0}
             </span>
             <span className="text-xs text-slate-400 ml-1">pts</span>
           </div>
