@@ -234,8 +234,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
               data.user.user_metadata?.full_name || email.split("@")[0],
             country: "India",
             city: data.user.user_metadata?.city || "India",
-            avatar_url:
-              "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=200",
+            avatar_url: undefined,
             identity_verified: false,
             property_verified: false,
             role: "member",
@@ -340,8 +339,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           full_name: data.user.user_metadata?.full_name || email.split("@")[0],
           country: "India",
           city: data.user.user_metadata?.city || "India",
-          avatar_url:
-            "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=200",
+          avatar_url: undefined,
           identity_verified: false,
           property_verified: false,
           role: "member",
@@ -406,8 +404,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           phone: data.phone,
           country: data.country || "India",
           city: data.city,
-          avatar_url:
-            "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=200",
+          avatar_url: undefined,
           identity_verified: false,
           property_verified: false,
           role: "member",
@@ -454,8 +451,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         phone: data.phone,
         country: data.country || "India",
         city: data.city,
-        avatar_url:
-          "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=200",
+        avatar_url: undefined,
         identity_verified: false,
         property_verified: false,
         role: "member",

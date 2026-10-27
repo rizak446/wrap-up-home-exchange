@@ -21,6 +21,7 @@ import {
 import { useAuth } from "@/context/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { UserAvatar } from "@/components/ui/avatar";
 import { compressImage } from "@/lib/image-compression";
 
 export default function ProfileSettingsPage() {
@@ -61,11 +62,17 @@ export default function ProfileSettingsPage() {
       setAvatarUrl(currentUser.avatar_url || null);
       setDocumentType(currentUser.document_type || "aadhaar");
       setDocumentNumber(currentUser.document_number || "");
-      setDocumentUrl(currentUser.document_url || null);
+      if (currentUser.document_url) {
+        setDocumentUrl(currentUser.document_url);
+        const cleanName = currentUser.document_url.includes("/")
+          ? currentUser.document_url.split("/").pop()
+          : currentUser.document_url;
+        setDocumentFileName(cleanName || "Identity Document on File");
+      }
     }
   }, [currentUser]);
 
-  // Handle local profile image upload (PNG, JPG, WebP, Mobile Camera)
+  // Handle local profile image upload (PNG, JPG, WebP, Mobile Camera) with AUTO-SAVE
   const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -77,9 +84,10 @@ export default function ProfileSettingsPage() {
 
     setIsCompressingPhoto(true);
     setErrorMessage(null);
+    setSuccessMessage("Compressing & saving your photo...");
 
     try {
-      // Automatically resize & compress high-res mobile camera photos to ~50KB JPEG
+      // Automatically resize & compress high-res mobile camera photos to ~45KB JPEG
       const compressedDataUrl = await compressImage(file, {
         maxWidth: 500,
         maxHeight: 500,
@@ -87,41 +95,46 @@ export default function ProfileSettingsPage() {
       });
 
       setAvatarUrl(compressedDataUrl);
-      setHasPhotoChanged(true);
-      setSuccessMessage("Photo ready! Click 'Save Photo' or 'Save Profile' to apply.");
+
+      // AUTO-SAVE IMMEDIATELY: Save photo to Supabase & state without extra buttons
+      const res = await updateProfile({
+        avatar_url: compressedDataUrl,
+      });
+
+      if (res.success) {
+        setHasPhotoChanged(false);
+        setSuccessMessage("✓ Profile photo updated and saved!");
+        setTimeout(() => setSuccessMessage(null), 3500);
+      } else {
+        setErrorMessage(res.error || "Failed to update profile photo.");
+      }
     } catch (err: any) {
       console.error("Compression error:", err);
       setErrorMessage("Could not process this image. Please try a different photo.");
     } finally {
       setIsCompressingPhoto(false);
-      // Reset input value so the same file can be selected again if needed
       if (e.target) e.target.value = "";
     }
   };
 
-  // Quick single-tap save for just the profile photo
-  const handleQuickSavePhoto = async () => {
-    if (!avatarUrl) return;
-    setIsSavingPhoto(true);
+  // Instant photo removal
+  const handleRemovePhoto = async () => {
+    setIsCompressingPhoto(true);
+    setAvatarUrl(null);
     setErrorMessage(null);
-    setSuccessMessage(null);
-
     try {
       const res = await updateProfile({
-        avatar_url: avatarUrl,
+        avatar_url: undefined,
       });
-
       if (res.success) {
         setHasPhotoChanged(false);
-        setSuccessMessage("Profile photo saved successfully!");
+        setSuccessMessage("✓ Profile photo removed.");
         setTimeout(() => setSuccessMessage(null), 3000);
-      } else {
-        setErrorMessage(res.error || "Failed to save profile photo.");
       }
-    } catch (err: any) {
-      setErrorMessage(err.message || "An unexpected error occurred.");
+    } catch {
+      // fallback
     } finally {
-      setIsSavingPhoto(false);
+      setIsCompressingPhoto(false);
     }
   };
 
@@ -130,45 +143,49 @@ export default function ProfileSettingsPage() {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    if (file.size > 20 * 1024 * 1024) {
-      setErrorMessage("Document file size must be less than 20MB.");
+    if (file.size > 25 * 1024 * 1024) {
+      setErrorMessage("Document file size must be less than 25MB.");
       return;
     }
 
-    setDocumentFileName(file.name);
+    const fileSizeStr =
+      file.size > 1024 * 1024
+        ? (file.size / (1024 * 1024)).toFixed(1) + " MB"
+        : Math.round(file.size / 1024) + " KB";
+
+    const displayName = `${file.name} (${fileSizeStr})`;
+    setDocumentFileName(displayName);
+    setDocumentUrl(file.name);
     setIsCompressingDoc(true);
     setErrorMessage(null);
 
     try {
-      if (file.type.startsWith("image/")) {
-        const compressedDoc = await compressImage(file, {
-          maxWidth: 1200,
-          maxHeight: 1200,
-          quality: 0.82,
-        });
-        setDocumentUrl(compressedDoc);
-      } else {
-        // PDF handler
-        const reader = new FileReader();
-        reader.onload = (event) => {
-          const result = event.target?.result as string;
-          if (result) setDocumentUrl(result);
-        };
-        reader.readAsDataURL(file);
+      let finalDocRef = displayName;
+
+      // Try uploading to Supabase verification-vault storage if available
+      try {
+        const { createClient } = await import("@/lib/supabase/client");
+        const supabase = createClient();
+        if (currentUser?.id) {
+          const filePath = `${currentUser.id}/${Date.now()}_${file.name.replace(/[^a-zA-Z0-9._-]/g, "_")}`;
+          await supabase.storage.from("verification-vault").upload(filePath, file, {
+            upsert: true,
+          });
+          finalDocRef = filePath;
+        }
+      } catch (storageErr) {
+        console.warn("Storage upload note:", storageErr);
       }
-      setSuccessMessage("Document attached! Remember to click 'Save Profile & Details'.");
+
+      setDocumentUrl(finalDocRef);
+      setSuccessMessage(`✓ Document attached: ${file.name}. Click 'Save Profile & Details' to submit.`);
     } catch (err: any) {
       console.error("Doc upload error:", err);
       setErrorMessage("Could not process document file.");
     } finally {
       setIsCompressingDoc(false);
+      if (e.target) e.target.value = "";
     }
-  };
-
-  const handleRemovePhoto = () => {
-    setAvatarUrl(null);
-    setHasPhotoChanged(true);
-    setSuccessMessage("Photo removed. Click 'Save Profile' to apply.");
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -187,7 +204,7 @@ export default function ProfileSettingsPage() {
         avatar_url: avatarUrl || undefined,
         document_type: documentType,
         document_number: documentNumber.trim() || undefined,
-        document_url: documentUrl || undefined,
+        document_url: documentUrl || documentFileName || undefined,
       });
 
       if (res.success) {
@@ -277,18 +294,15 @@ export default function ProfileSettingsPage() {
                 {isCompressingPhoto ? (
                   <div className="w-full h-full bg-slate-100 flex flex-col items-center justify-center text-teal-700 animate-pulse">
                     <Loader2 className="h-7 w-7 animate-spin mb-1" />
-                    <span className="text-[9px] font-bold">Optimizing...</span>
+                    <span className="text-[9px] font-bold">Saving...</span>
                   </div>
-                ) : avatarUrl ? (
-                  <img
-                    src={avatarUrl}
-                    alt={fullName || "User Avatar"}
-                    className="w-full h-full object-cover"
-                  />
                 ) : (
-                  <div className="w-full h-full bg-slate-100 flex items-center justify-center text-slate-400">
-                    <User className="h-12 w-12" />
-                  </div>
+                  <UserAvatar
+                    src={avatarUrl}
+                    name={fullName}
+                    size="xl"
+                    className="w-full h-full text-3xl"
+                  />
                 )}
               </div>
 
@@ -321,7 +335,7 @@ export default function ProfileSettingsPage() {
                   {isCompressingPhoto ? (
                     <>
                       <Loader2 className="h-4 w-4 animate-spin" />
-                      Optimizing Photo...
+                      Saving Photo...
                     </>
                   ) : (
                     <>
@@ -330,21 +344,6 @@ export default function ProfileSettingsPage() {
                     </>
                   )}
                 </label>
-
-                {/* Instant Save Photo button if user just picked a new photo */}
-                {hasPhotoChanged && avatarUrl && (
-                  <Button
-                    type="button"
-                    variant="teal"
-                    size="sm"
-                    isLoading={isSavingPhoto}
-                    onClick={handleQuickSavePhoto}
-                    className="gap-1.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold animate-pulse"
-                  >
-                    <CheckCircle2 className="h-3.5 w-3.5" />
-                    Save Photo Now
-                  </Button>
-                )}
 
                 {avatarUrl && (
                   <Button
@@ -361,7 +360,7 @@ export default function ProfileSettingsPage() {
               </div>
 
               <p className="text-[11px] text-slate-500">
-                Supports phone camera photos, JPG, PNG, or WebP up to 25MB (automatically optimized).
+                Supports phone camera photos, JPG, PNG, or WebP up to 25MB (auto-saved).
               </p>
             </div>
           </div>
@@ -538,15 +537,27 @@ export default function ProfileSettingsPage() {
                     <Loader2 className="h-5 w-5 animate-spin" />
                     <span>Processing Document File...</span>
                   </div>
-                ) : documentUrl ? (
-                  <div className="flex items-center justify-center gap-3">
-                    <FileText className="h-6 w-6 text-teal-600" />
-                    <div className="text-left">
-                      <p className="text-xs font-bold text-teal-900">
-                        {documentFileName || "Identity Document Attached"}
-                      </p>
-                      <span className="text-[10px] text-slate-400">Tap to replace file</span>
+                ) : (documentUrl || documentFileName) ? (
+                  <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 bg-emerald-50/90 p-4 rounded-2xl border-2 border-emerald-300 text-left">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-xl bg-emerald-600 text-white flex items-center justify-center flex-shrink-0 shadow-xs">
+                        <FileCheck className="h-5 w-5" />
+                      </div>
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <p className="text-xs font-bold text-emerald-950">
+                            {documentFileName || "Identity Document Attached"}
+                          </p>
+                          <Badge variant="success" className="text-[9px] py-0">Document Attached</Badge>
+                        </div>
+                        <span className="text-[11px] text-emerald-700">
+                          {documentType.toUpperCase()} document proof ready for verification review
+                        </span>
+                      </div>
                     </div>
+                    <span className="text-xs font-bold text-emerald-800 hover:text-emerald-950 underline cursor-pointer">
+                      Tap to replace file
+                    </span>
                   </div>
                 ) : (
                   <div className="space-y-1">

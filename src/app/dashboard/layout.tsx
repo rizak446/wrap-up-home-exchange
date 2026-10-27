@@ -18,6 +18,7 @@ import {
   LogOut,
 } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
+import { UserAvatar } from "@/components/ui/avatar";
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
@@ -47,10 +48,11 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           title="Click to view & edit your profile"
         >
           <div className="relative">
-            <img
-              src={currentUser?.avatar_url || "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100"}
-              alt=""
-              className="h-10 w-10 rounded-full object-cover ring-2 ring-teal-500 group-hover:scale-105 transition-transform"
+            <UserAvatar
+              src={currentUser?.avatar_url}
+              name={currentUser?.full_name}
+              size="md"
+              className="ring-2 ring-teal-500 group-hover:scale-105 transition-transform"
             />
             <span className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 bg-teal-600 rounded-full border-2 border-white flex items-center justify-center text-[8px] text-white">
               ✎

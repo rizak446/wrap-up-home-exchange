@@ -21,6 +21,7 @@ import {
 import { useAuth } from "@/context/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { UserAvatar } from "@/components/ui/avatar";
 
 export default function Navbar() {
   const pathname = usePathname();
@@ -129,13 +130,11 @@ export default function Navbar() {
                     <span className="text-xs font-bold text-[#362719]">
                       {currentUser.full_name?.split(" ")[0] || "Member"}
                     </span>
-                    <img
-                      src={
-                        currentUser.avatar_url ||
-                        "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100"
-                      }
-                      alt={currentUser.full_name || "Profile"}
-                      className="h-7 w-7 rounded-full object-cover ring-2 ring-[#C8792C]"
+                    <UserAvatar
+                      src={currentUser.avatar_url}
+                      name={currentUser.full_name}
+                      size="sm"
+                      className="h-8 w-8 ring-2 ring-[#C8792C]"
                     />
                   </button>
 
@@ -298,10 +297,11 @@ export default function Navbar() {
             {currentUser ? (
               <div className="space-y-2">
                 <div className="flex items-center gap-3 px-3 py-2 bg-[#FAF5EA] border border-[#F4D9A0]/50 rounded-xl">
-                  <img
-                    src={currentUser.avatar_url || "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100"}
-                    alt=""
-                    className="h-10 w-10 rounded-full object-cover ring-2 ring-[#C8792C]"
+                  <UserAvatar
+                    src={currentUser.avatar_url}
+                    name={currentUser.full_name}
+                    size="md"
+                    className="h-10 w-10 ring-2 ring-[#C8792C]"
                   />
                   <div>
                     <div className="font-bold text-[#2E1E13]">{currentUser.full_name}</div>
