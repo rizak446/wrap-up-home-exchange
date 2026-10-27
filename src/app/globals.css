@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Playfair+Display:ital,wght@0,600;0,700;1,600&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Playfair+Display:ital,wght@0,500;0,600;0,700;0,800;1,600&family=Cinzel:wght@500;600;700;800&display=swap');
 
 @tailwind base;
 @tailwind components;
@@ -6,38 +6,40 @@
 
 @layer base {
   :root {
-    --background: 210 40% 98%;
-    --foreground: 222 47% 11%;
+    /* Warm Ivory & Luxury Cream Canvas */
+    --background: 38 35% 97%; /* #FAF7F2 */
+    --foreground: 26 42% 14%; /* #2E1E13 */
 
-    --card: 0 0% 100%;
-    --card-foreground: 222 47% 11%;
+    --card: 40 33% 99%; /* #FFFDF9 */
+    --card-foreground: 26 42% 14%;
 
-    --popover: 0 0% 100%;
-    --popover-foreground: 222 47% 11%;
+    --popover: 40 33% 99%;
+    --popover-foreground: 26 42% 14%;
 
-    /* Deep Navy */
-    --primary: 218 64% 11%;
-    --primary-foreground: 210 40% 98%;
+    /* Mocha Brown #5B4632 */
+    --primary: 29 29% 28%;
+    --primary-foreground: 41 78% 95%;
 
-    /* Soft Slate */
-    --secondary: 210 40% 96.1%;
-    --secondary-foreground: 222 47% 11.2%;
+    /* Soft Champagne Gold #F4D9A0 */
+    --secondary: 41 55% 92%;
+    --secondary-foreground: 29 29% 28%;
 
-    --muted: 210 40% 96.1%;
-    --muted-foreground: 215.4 16.3% 46.9%;
+    --muted: 36 22% 93%;
+    --muted-foreground: 28 15% 45%;
 
-    /* Ocean Teal */
-    --accent: 174 75% 39%;
+    /* Burnt Amber #C8792C */
+    --accent: 30 64% 48%;
     --accent-foreground: 0 0% 100%;
 
     --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 210 40% 98%;
+    --destructive-foreground: 40 33% 98%;
 
-    --border: 214.3 31.8% 91.4%;
-    --input: 214.3 31.8% 91.4%;
-    --ring: 174 75% 39%;
+    /* Warm Sand & Champagne Borders */
+    --border: 35 22% 88%;
+    --input: 35 22% 88%;
+    --ring: 30 64% 48%;
 
-    --radius: 0.75rem;
+    --radius: 0.85rem;
   }
 
   * {
@@ -45,7 +47,7 @@
   }
 
   body {
-    @apply bg-background text-foreground antialiased selection:bg-teal-500 selection:text-white;
+    @apply bg-background text-foreground antialiased selection:bg-[#C8792C] selection:text-white;
     font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
   }
 
@@ -54,55 +56,62 @@
   }
 }
 
-/* Glassmorphism utility */
+/* Glassmorphism utility with luxury warm tones */
 .glass {
-  background: rgba(255, 255, 255, 0.85);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
+  background: rgba(250, 247, 242, 0.88);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
 }
 
 .glass-dark {
-  background: rgba(10, 25, 47, 0.85);
+  background: rgba(38, 26, 16, 0.88);
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
 }
 
-/* Leaflet map pin styling */
+.glass-champagne {
+  background: rgba(244, 217, 160, 0.12);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(244, 217, 160, 0.35);
+}
+
+/* Leaflet map pin styling in Mocha & Burnt Amber */
 .custom-map-marker {
   display: flex;
   align-items: center;
   justify-content: center;
-  background-color: #0A192F;
+  background-color: #5B4632;
   color: #FFFFFF;
   font-weight: 700;
   font-size: 12px;
-  padding: 4px 8px;
+  padding: 4px 10px;
   border-radius: 9999px;
-  box-shadow: 0 4px 12px rgba(10, 25, 47, 0.25);
-  border: 2px solid #14B8A6;
+  box-shadow: 0 4px 14px rgba(91, 70, 50, 0.35);
+  border: 2px solid #C8792C;
   white-space: nowrap;
-  transition: transform 0.2s ease;
+  transition: transform 0.2s ease, background-color 0.2s ease;
 }
 
 .custom-map-marker:hover {
   transform: scale(1.1);
-  background-color: #0D9488;
+  background-color: #C8792C;
 }
 
-/* Custom Scrollbars */
+/* Custom Luxury Scrollbars */
 ::-webkit-scrollbar {
   width: 8px;
   height: 8px;
 }
 ::-webkit-scrollbar-track {
-  background: #f1f5f9;
+  background: #F4EFE9;
 }
 ::-webkit-scrollbar-thumb {
-  background: #cbd5e1;
+  background: #CEBCAB;
   border-radius: 4px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: #94a3b8;
+  background: #A8927D;
 }
 
 /* Fluid Watery Tactile Click & Instant Responsiveness */

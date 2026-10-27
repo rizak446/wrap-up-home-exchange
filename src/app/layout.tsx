@@ -37,7 +37,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" className="h-full scroll-smooth">
-      <body className="min-h-screen flex flex-col bg-slate-50/50 text-slate-900 antialiased selection:bg-teal-500 selection:text-white">
+      <body className="min-h-screen flex flex-col bg-[#FAF7F2] text-[#261A10] antialiased selection:bg-[#C8792C] selection:text-white">
         <AuthProvider>
           <Navbar />
           <main className="flex-1">{children}</main>

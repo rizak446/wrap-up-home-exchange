@@ -3,7 +3,7 @@ import { cn } from "@/lib/utils";
 
 export interface ButtonProps
   extends React.ButtonHTMLAttributes<HTMLButtonElement> {
-  variant?: "primary" | "secondary" | "outline" | "ghost" | "danger" | "teal";
+  variant?: "primary" | "secondary" | "outline" | "ghost" | "danger" | "teal" | "mocha" | "champagne";
   size?: "sm" | "md" | "lg";
   isLoading?: boolean;
 }
@@ -14,12 +14,14 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
       "inline-flex items-center justify-center font-semibold rounded-xl cursor-pointer select-none transition-all duration-150 ease-out focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed active:scale-[0.95] active:translate-y-[1px] active:brightness-95";
 
     const variantStyles = {
-      primary: "bg-navy-950 text-white hover:bg-slate-800 focus:ring-navy-950 shadow-sm",
-      teal: "bg-teal-600 text-white hover:bg-teal-700 focus:ring-teal-500 shadow-sm shadow-teal-700/20",
-      secondary: "bg-slate-100 text-slate-800 hover:bg-slate-200 focus:ring-slate-300",
-      outline: "border border-slate-300 bg-transparent hover:bg-slate-50 text-slate-700 focus:ring-slate-400",
-      ghost: "bg-transparent hover:bg-slate-100 text-slate-600 focus:ring-slate-300",
-      danger: "bg-rose-600 text-white hover:bg-rose-700 focus:ring-rose-500",
+      primary: "bg-gradient-to-r from-[#C8792C] to-[#B2631F] text-white hover:brightness-105 focus:ring-[#C8792C] shadow-md shadow-[#C8792C]/25 border border-[#F4D9A0]/30",
+      teal: "bg-[#C8792C] text-white hover:bg-[#B46520] focus:ring-[#C8792C] shadow-md shadow-[#C8792C]/25",
+      mocha: "bg-[#5B4632] text-white hover:bg-[#433222] focus:ring-[#5B4632] shadow-sm",
+      champagne: "bg-[#FAF5EA] text-[#5B4632] border border-[#F4D9A0] hover:bg-[#F6EBD1] focus:ring-[#F4D9A0]",
+      secondary: "bg-[#F4EFE9] text-[#493726] hover:bg-[#E6DCD0] focus:ring-[#CEBCAB]",
+      outline: "border border-[#CEBCAB] bg-transparent hover:bg-[#FAF7F4] text-[#493726] focus:ring-[#C8792C]",
+      ghost: "bg-transparent hover:bg-[#F4EFE9] text-[#5B4632] focus:ring-[#CEBCAB]",
+      danger: "bg-rose-700 text-white hover:bg-rose-800 focus:ring-rose-600",
     };
 
     const sizeStyles = {
