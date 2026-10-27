@@ -11,17 +11,17 @@ export interface ButtonProps
 export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
   ({ className, variant = "primary", size = "md", isLoading, children, disabled, ...props }, ref) => {
     const baseStyles =
-      "inline-flex items-center justify-center font-semibold rounded-xl cursor-pointer select-none transition-all duration-150 ease-out focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed active:scale-[0.95] active:translate-y-[1px] active:brightness-95";
+      "relative inline-flex items-center justify-center font-semibold rounded-xl cursor-pointer select-none transition-all duration-200 ease-out focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed active:scale-[0.95] active:translate-y-[1px] active:brightness-95";
 
     const variantStyles = {
-      primary: "bg-gradient-to-r from-[#C8792C] to-[#B2631F] text-white hover:brightness-105 focus:ring-[#C8792C] shadow-md shadow-[#C8792C]/25 border border-[#F4D9A0]/30",
-      teal: "bg-[#C8792C] text-white hover:bg-[#B46520] focus:ring-[#C8792C] shadow-md shadow-[#C8792C]/25",
-      mocha: "bg-[#5B4632] text-white hover:bg-[#433222] focus:ring-[#5B4632] shadow-sm",
-      champagne: "bg-[#FAF5EA] text-[#5B4632] border border-[#F4D9A0] hover:bg-[#F6EBD1] focus:ring-[#F4D9A0]",
-      secondary: "bg-[#F4EFE9] text-[#493726] hover:bg-[#E6DCD0] focus:ring-[#CEBCAB]",
-      outline: "border border-[#CEBCAB] bg-transparent hover:bg-[#FAF7F4] text-[#493726] focus:ring-[#C8792C]",
-      ghost: "bg-transparent hover:bg-[#F4EFE9] text-[#5B4632] focus:ring-[#CEBCAB]",
-      danger: "bg-rose-700 text-white hover:bg-rose-800 focus:ring-rose-600",
+      primary: "bg-gradient-to-r from-[#C8792C] to-[#B2631F] text-white hover:brightness-105 hover:shadow-lg hover:shadow-[#C8792C]/30 focus:ring-[#C8792C] shadow-md shadow-[#C8792C]/25 border border-[#F4D9A0]/30 hover:-translate-y-0.5 active:translate-y-0 shimmer-touch",
+      teal: "bg-[#C8792C] text-white hover:bg-[#B46520] hover:shadow-lg hover:shadow-[#C8792C]/30 focus:ring-[#C8792C] shadow-md shadow-[#C8792C]/25 hover:-translate-y-0.5 active:translate-y-0 shimmer-touch",
+      mocha: "bg-[#5B4632] text-white hover:bg-[#433222] hover:shadow-md hover:shadow-[#5B4632]/25 focus:ring-[#5B4632] hover:-translate-y-0.5 active:translate-y-0 shimmer-touch",
+      champagne: "bg-[#FAF5EA] text-[#5B4632] border border-[#F4D9A0] hover:bg-[#F6EBD1] hover:border-[#E8C882] focus:ring-[#F4D9A0] hover:-translate-y-0.5 active:translate-y-0 shimmer-touch",
+      secondary: "bg-[#F4EFE9] text-[#493726] hover:bg-[#E6DCD0] focus:ring-[#CEBCAB] hover:-translate-y-0.5 active:translate-y-0",
+      outline: "border border-[#CEBCAB] bg-transparent hover:bg-[#FAF7F4] hover:border-[#A8927D] text-[#493726] focus:ring-[#C8792C] hover:-translate-y-0.5 active:translate-y-0",
+      ghost: "bg-transparent hover:bg-[#F4EFE9] text-[#5B4632] focus:ring-[#CEBCAB] hover:-translate-y-0.5 active:translate-y-0",
+      danger: "bg-rose-700 text-white hover:bg-rose-800 focus:ring-rose-600 hover:-translate-y-0.5 active:translate-y-0",
     };
 
     const sizeStyles = {

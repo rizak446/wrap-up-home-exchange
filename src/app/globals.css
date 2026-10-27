@@ -136,11 +136,144 @@ a.watery-btn:active,
 
 /* Fluid card dynamics */
 .watery-card {
-  transition: transform 180ms cubic-bezier(0.2, 0.8, 0.2, 1), box-shadow 180ms ease;
+  transition: transform 180ms cubic-bezier(0.2, 0.8, 0.2, 1), box-shadow 180ms ease, border-color 180ms ease;
 }
 .watery-card:hover {
-  transform: translateY(-2px);
+  transform: translateY(-3px);
+  box-shadow: 0 16px 28px -6px rgba(40, 26, 16, 0.09), 0 0 20px rgba(244, 217, 160, 0.22);
 }
 .watery-card:active {
   transform: scale(0.985) translateY(0px);
 }
+
+/* ============================================================
+   DYNAMIC TOUCH & LIQUID AESTHETICS (Champagne Gold & Amber)
+   ============================================================ */
+
+/* Liquid Touch Ripple Ring */
+.dynamic-liquid-ripple {
+  position: absolute;
+  width: 16px;
+  height: 16px;
+  margin-left: -8px;
+  margin-top: -8px;
+  border-radius: 9999px;
+  border: 1.5px solid rgba(244, 217, 160, 0.85);
+  background: radial-gradient(circle, rgba(244, 217, 160, 0.42) 0%, rgba(200, 121, 44, 0.2) 50%, transparent 75%);
+  box-shadow: 0 0 18px rgba(200, 121, 44, 0.35);
+  pointer-events: none;
+  animation: liquidRippleSpread 680ms cubic-bezier(0.12, 0.8, 0.32, 1) forwards;
+}
+
+@keyframes liquidRippleSpread {
+  0% {
+    transform: scale(0.35);
+    opacity: 0.95;
+  }
+  50% {
+    opacity: 0.7;
+  }
+  100% {
+    transform: scale(9.5);
+    opacity: 0;
+  }
+}
+
+/* Secondary Touch Aura Pulse */
+.dynamic-touch-aura {
+  position: absolute;
+  width: 44px;
+  height: 44px;
+  margin-left: -22px;
+  margin-top: -22px;
+  border-radius: 9999px;
+  background: radial-gradient(circle, rgba(200, 121, 44, 0.28) 0%, rgba(244, 217, 160, 0.14) 55%, transparent 100%);
+  filter: blur(5px);
+  pointer-events: none;
+  animation: touchAuraPulse 500ms ease-out forwards;
+}
+
+@keyframes touchAuraPulse {
+  0% {
+    transform: scale(0.5);
+    opacity: 0.85;
+  }
+  100% {
+    transform: scale(3.2);
+    opacity: 0;
+  }
+}
+
+/* Floating Champagne Micro-Sparkles */
+.dynamic-touch-sparkle {
+  position: absolute;
+  width: 5px;
+  height: 5px;
+  margin-left: -2.5px;
+  margin-top: -2.5px;
+  border-radius: 9999px;
+  background: #F4D9A0;
+  box-shadow: 0 0 8px #C8792C, 0 0 14px #F4D9A0;
+  pointer-events: none;
+  animation: sparkleFly 520ms cubic-bezier(0.1, 0.8, 0.3, 1) forwards;
+}
+
+@keyframes sparkleFly {
+  0% {
+    transform: translate3d(0, 0, 0) scale(1);
+    opacity: 1;
+  }
+  100% {
+    transform: translate3d(var(--dx), var(--dy), 0) scale(0.2);
+    opacity: 0;
+  }
+}
+
+/* Luxury Interactive Shimmer Sheen for Cards & Badges */
+.shimmer-touch {
+  position: relative;
+  overflow: hidden;
+}
+.shimmer-touch::after {
+  content: "";
+  position: absolute;
+  top: -60%;
+  left: -60%;
+  width: 220%;
+  height: 220%;
+  background: linear-gradient(
+    65deg,
+    transparent 35%,
+    rgba(244, 217, 160, 0.22) 50%,
+    transparent 65%
+  );
+  transform: rotate(25deg) translateY(-120%);
+  transition: transform 700ms cubic-bezier(0.2, 0.8, 0.2, 1);
+  pointer-events: none;
+}
+.shimmer-touch:hover::after,
+.shimmer-touch:active::after {
+  transform: rotate(25deg) translateY(120%);
+}
+
+/* Aesthetic Glow & Focus for Form Inputs */
+input:focus, textarea:focus, select:focus {
+  transition: all 180ms cubic-bezier(0.2, 0.8, 0.2, 1);
+  box-shadow: 0 0 0 3.5px rgba(244, 217, 160, 0.45), 0 2px 10px rgba(200, 121, 44, 0.12);
+  border-color: #C8792C !important;
+}
+
+/* Luxury Floating Micro-Animation */
+@keyframes luxuryFloat {
+  0%, 100% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-4px);
+  }
+}
+
+.luxury-float {
+  animation: luxuryFloat 4s ease-in-out infinite;
+}
+

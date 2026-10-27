@@ -3,6 +3,7 @@ import "./globals.css";
 import { AuthProvider } from "@/context/AuthContext";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
+import DynamicTouchEffects from "@/components/ui/dynamic-touch-effects";
 
 export const viewport: Viewport = {
   width: "device-width",
@@ -39,6 +40,7 @@ export default function RootLayout({
     <html lang="en" className="h-full scroll-smooth">
       <body className="min-h-screen flex flex-col bg-[#FAF7F2] text-[#261A10] antialiased selection:bg-[#C8792C] selection:text-white">
         <AuthProvider>
+          <DynamicTouchEffects />
           <Navbar />
           <main className="flex-1">{children}</main>
           <Footer />

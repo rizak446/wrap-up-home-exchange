@@ -511,22 +511,56 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
         if (error) {
           console.error("Error updating Supabase profile:", error);
+          return { success: false, error: error.message };
         }
 
         // Also record in user_verifications if document uploaded
         if (updatedUser.document_type && (updatedUser.document_url || updatedUser.document_number)) {
-          await supabase.from("user_verifications").upsert({
-            user_id: currentUser.id,
-            document_type: updatedUser.document_type,
-            document_ref: updatedUser.document_number || "Uploaded Document File",
-            status: "pending",
-            created_at: new Date().toISOString(),
-          });
+          try {
+            const { data: existingVer } = await supabase
+              .from("user_verifications")
+              .select("id")
+              .eq("user_id", currentUser.id)
+              .maybeSingle();
+
+            if (existingVer) {
+              await supabase
+                .from("user_verifications")
+                .update({
+                  document_type: updatedUser.document_type,
+                  document_ref: updatedUser.document_number || "Uploaded Document File",
+                  status: "pending",
+                })
+                .eq("id", existingVer.id);
+            } else {
+              await supabase.from("user_verifications").insert({
+                user_id: currentUser.id,
+                document_type: updatedUser.document_type,
+                document_ref: updatedUser.document_number || "Uploaded Document File",
+                status: "pending",
+                created_at: new Date().toISOString(),
+              });
+            }
+          } catch (verErr) {
+            console.warn("Notice: user_verifications update non-critical:", verErr);
+          }
         }
       }
 
       if (typeof window !== "undefined") {
-        localStorage.setItem("haven_current_user", JSON.stringify(updatedUser));
+        try {
+          const storageUser = { ...updatedUser };
+          // If avatar or doc is a large data URL, strip or truncate for localStorage to prevent quota crashes
+          if (storageUser.avatar_url && storageUser.avatar_url.length > 50000) {
+            storageUser.avatar_url = storageUser.avatar_url.slice(0, 100);
+          }
+          if (storageUser.document_url && storageUser.document_url.length > 50000) {
+            storageUser.document_url = undefined;
+          }
+          localStorage.setItem("haven_current_user", JSON.stringify(storageUser));
+        } catch (storageErr) {
+          console.warn("localStorage quota exceeded or blocked:", storageErr);
+        }
       }
 
       setCurrentUser(updatedUser);

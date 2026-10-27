@@ -16,10 +16,12 @@ import {
   CheckCircle2,
   FileText,
   FileCheck,
+  Loader2,
 } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { compressImage } from "@/lib/image-compression";
 
 export default function ProfileSettingsPage() {
   const { currentUser, updateProfile } = useAuth();
@@ -34,12 +36,16 @@ export default function ProfileSettingsPage() {
 
   // Photo state
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
+  const [isCompressingPhoto, setIsCompressingPhoto] = useState(false);
+  const [isSavingPhoto, setIsSavingPhoto] = useState(false);
+  const [hasPhotoChanged, setHasPhotoChanged] = useState(false);
 
   // Document verification state
   const [documentType, setDocumentType] = useState("aadhaar");
   const [documentNumber, setDocumentNumber] = useState("");
   const [documentUrl, setDocumentUrl] = useState<string | null>(null);
   const [documentFileName, setDocumentFileName] = useState("");
+  const [isCompressingDoc, setIsCompressingDoc] = useState(false);
 
   const [isSaving, setIsSaving] = useState(false);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
@@ -59,59 +65,109 @@ export default function ProfileSettingsPage() {
     }
   }, [currentUser]);
 
-  // Handle local profile image upload (PNG, JPG, WebP)
-  const handlePhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  // Handle local profile image upload (PNG, JPG, WebP, Mobile Camera)
+  const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    if (!file.type.startsWith("image/")) {
-      setErrorMessage("Please select a valid image file (PNG, JPG, or WebP).");
+    if (file.size > 25 * 1024 * 1024) {
+      setErrorMessage("Image file size should be less than 25MB.");
       return;
     }
 
-    if (file.size > 5 * 1024 * 1024) {
-      setErrorMessage("Image file size should be less than 5MB.");
-      return;
-    }
+    setIsCompressingPhoto(true);
+    setErrorMessage(null);
 
-    const reader = new FileReader();
-    reader.onload = (event) => {
-      const result = event.target?.result as string;
-      if (result) {
-        setAvatarUrl(result);
-        setSuccessMessage("Photo loaded! Click 'Save Profile' to apply changes.");
-        setErrorMessage(null);
+    try {
+      // Automatically resize & compress high-res mobile camera photos to ~50KB JPEG
+      const compressedDataUrl = await compressImage(file, {
+        maxWidth: 500,
+        maxHeight: 500,
+        quality: 0.82,
+      });
+
+      setAvatarUrl(compressedDataUrl);
+      setHasPhotoChanged(true);
+      setSuccessMessage("Photo ready! Click 'Save Photo' or 'Save Profile' to apply.");
+    } catch (err: any) {
+      console.error("Compression error:", err);
+      setErrorMessage("Could not process this image. Please try a different photo.");
+    } finally {
+      setIsCompressingPhoto(false);
+      // Reset input value so the same file can be selected again if needed
+      if (e.target) e.target.value = "";
+    }
+  };
+
+  // Quick single-tap save for just the profile photo
+  const handleQuickSavePhoto = async () => {
+    if (!avatarUrl) return;
+    setIsSavingPhoto(true);
+    setErrorMessage(null);
+    setSuccessMessage(null);
+
+    try {
+      const res = await updateProfile({
+        avatar_url: avatarUrl,
+      });
+
+      if (res.success) {
+        setHasPhotoChanged(false);
+        setSuccessMessage("Profile photo saved successfully!");
+        setTimeout(() => setSuccessMessage(null), 3000);
+      } else {
+        setErrorMessage(res.error || "Failed to save profile photo.");
       }
-    };
-    reader.readAsDataURL(file);
+    } catch (err: any) {
+      setErrorMessage(err.message || "An unexpected error occurred.");
+    } finally {
+      setIsSavingPhoto(false);
+    }
   };
 
   // Handle local document file upload (PDF or Image)
-  const handleDocFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleDocFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    if (file.size > 8 * 1024 * 1024) {
-      setErrorMessage("Document file size must be less than 8MB.");
+    if (file.size > 20 * 1024 * 1024) {
+      setErrorMessage("Document file size must be less than 20MB.");
       return;
     }
 
     setDocumentFileName(file.name);
+    setIsCompressingDoc(true);
+    setErrorMessage(null);
 
-    const reader = new FileReader();
-    reader.onload = (event) => {
-      const result = event.target?.result as string;
-      if (result) {
-        setDocumentUrl(result);
-        setSuccessMessage("Document attached! Click 'Save Profile' to save details.");
-        setErrorMessage(null);
+    try {
+      if (file.type.startsWith("image/")) {
+        const compressedDoc = await compressImage(file, {
+          maxWidth: 1200,
+          maxHeight: 1200,
+          quality: 0.82,
+        });
+        setDocumentUrl(compressedDoc);
+      } else {
+        // PDF handler
+        const reader = new FileReader();
+        reader.onload = (event) => {
+          const result = event.target?.result as string;
+          if (result) setDocumentUrl(result);
+        };
+        reader.readAsDataURL(file);
       }
-    };
-    reader.readAsDataURL(file);
+      setSuccessMessage("Document attached! Remember to click 'Save Profile & Details'.");
+    } catch (err: any) {
+      console.error("Doc upload error:", err);
+      setErrorMessage("Could not process document file.");
+    } finally {
+      setIsCompressingDoc(false);
+    }
   };
 
   const handleRemovePhoto = () => {
     setAvatarUrl(null);
+    setHasPhotoChanged(true);
     setSuccessMessage("Photo removed. Click 'Save Profile' to apply.");
   };
 
@@ -135,7 +191,8 @@ export default function ProfileSettingsPage() {
       });
 
       if (res.success) {
-        setSuccessMessage("Your profile and verification details were saved successfully!");
+        setHasPhotoChanged(false);
+        setSuccessMessage("Your profile and details were saved successfully!");
         setTimeout(() => setSuccessMessage(null), 4000);
       } else {
         setErrorMessage(res.error || "Failed to update profile.");
@@ -214,10 +271,15 @@ export default function ProfileSettingsPage() {
           </div>
 
           <div className="flex flex-col sm:flex-row items-center gap-6">
-            {/* Avatar Preview */}
+            {/* Avatar Preview with Camera Badge */}
             <div className="relative group">
-              <div className="w-28 h-28 rounded-full overflow-hidden ring-4 ring-teal-500/20 border-2 border-white shadow-luxury bg-slate-100 flex items-center justify-center">
-                {avatarUrl ? (
+              <div className="w-28 h-28 rounded-full overflow-hidden ring-4 ring-teal-500/20 border-2 border-white shadow-luxury bg-slate-100 flex items-center justify-center relative">
+                {isCompressingPhoto ? (
+                  <div className="w-full h-full bg-slate-100 flex flex-col items-center justify-center text-teal-700 animate-pulse">
+                    <Loader2 className="h-7 w-7 animate-spin mb-1" />
+                    <span className="text-[9px] font-bold">Optimizing...</span>
+                  </div>
+                ) : avatarUrl ? (
                   <img
                     src={avatarUrl}
                     alt={fullName || "User Avatar"}
@@ -229,37 +291,60 @@ export default function ProfileSettingsPage() {
                   </div>
                 )}
               </div>
-              <button
-                type="button"
-                onClick={() => fileInputRef.current?.click()}
-                className="absolute inset-0 rounded-full bg-navy-950/60 text-white flex flex-col items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity backdrop-blur-xs cursor-pointer"
-                title="Change Photo"
+
+              {/* Direct Tap/Click Camera Badge */}
+              <label
+                htmlFor="avatar-photo-input"
+                className="absolute bottom-0 right-0 w-8 h-8 rounded-full bg-teal-700 hover:bg-teal-800 text-white flex items-center justify-center shadow-md cursor-pointer border-2 border-white transition-transform active:scale-95"
+                title="Upload Photo from Camera or Gallery"
               >
-                <Camera className="h-6 w-6 mb-1" />
-                <span className="text-[10px] font-bold">Change</span>
-              </button>
+                <Camera className="h-4 w-4" />
+              </label>
             </div>
 
             {/* Photo Action Buttons */}
             <div className="flex-1 space-y-3 text-center sm:text-left">
               <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2.5">
                 <input
+                  id="avatar-photo-input"
                   type="file"
                   ref={fileInputRef}
                   onChange={handlePhotoUpload}
-                  accept="image/png, image/jpeg, image/jpg, image/webp"
-                  className="hidden"
+                  accept="image/*"
+                  className="sr-only"
                 />
-                <Button
-                  type="button"
-                  variant="teal"
-                  size="sm"
-                  onClick={() => fileInputRef.current?.click()}
-                  className="gap-2"
+
+                <label
+                  htmlFor="avatar-photo-input"
+                  className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold text-white bg-teal-700 hover:bg-teal-800 active:scale-95 shadow-sm transition-all cursor-pointer"
                 >
-                  <Upload className="h-4 w-4" />
-                  Upload Photo
-                </Button>
+                  {isCompressingPhoto ? (
+                    <>
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                      Optimizing Photo...
+                    </>
+                  ) : (
+                    <>
+                      <Upload className="h-4 w-4" />
+                      Upload Photo
+                    </>
+                  )}
+                </label>
+
+                {/* Instant Save Photo button if user just picked a new photo */}
+                {hasPhotoChanged && avatarUrl && (
+                  <Button
+                    type="button"
+                    variant="teal"
+                    size="sm"
+                    isLoading={isSavingPhoto}
+                    onClick={handleQuickSavePhoto}
+                    className="gap-1.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold animate-pulse"
+                  >
+                    <CheckCircle2 className="h-3.5 w-3.5" />
+                    Save Photo Now
+                  </Button>
+                )}
 
                 {avatarUrl && (
                   <Button
@@ -275,8 +360,8 @@ export default function ProfileSettingsPage() {
                 )}
               </div>
 
-              <p className="text-[11px] text-slate-400">
-                Supports JPG, PNG, or WebP files up to 5MB.
+              <p className="text-[11px] text-slate-500">
+                Supports phone camera photos, JPG, PNG, or WebP up to 25MB (automatically optimized).
               </p>
             </div>
           </div>
@@ -436,39 +521,45 @@ export default function ProfileSettingsPage() {
                 Upload Document Proof (Front Side / PDF)
               </label>
               <input
+                id="doc-upload-input"
                 type="file"
                 ref={docFileInputRef}
                 onChange={handleDocFileUpload}
-                accept="image/png, image/jpeg, image/jpg, application/pdf"
-                className="hidden"
+                accept="image/*, application/pdf"
+                className="sr-only"
               />
 
-              <div
-                onClick={() => docFileInputRef.current?.click()}
-                className="border-2 border-dashed border-slate-200 hover:border-teal-500 rounded-2xl p-5 text-center cursor-pointer transition-colors bg-slate-50/50 hover:bg-teal-50/30"
+              <label
+                htmlFor="doc-upload-input"
+                className="block border-2 border-dashed border-slate-200 hover:border-teal-500 rounded-2xl p-5 text-center cursor-pointer transition-colors bg-slate-50/50 hover:bg-teal-50/30"
               >
-                {documentUrl ? (
+                {isCompressingDoc ? (
+                  <div className="flex items-center justify-center gap-2 text-teal-800 text-xs font-bold animate-pulse">
+                    <Loader2 className="h-5 w-5 animate-spin" />
+                    <span>Processing Document File...</span>
+                  </div>
+                ) : documentUrl ? (
                   <div className="flex items-center justify-center gap-3">
                     <FileText className="h-6 w-6 text-teal-600" />
                     <div className="text-left">
                       <p className="text-xs font-bold text-teal-900">
                         {documentFileName || "Identity Document Attached"}
                       </p>
-                      <span className="text-[10px] text-slate-400">Click to replace file</span>
+                      <span className="text-[10px] text-slate-400">Tap to replace file</span>
                     </div>
                   </div>
                 ) : (
                   <div className="space-y-1">
                     <Upload className="h-6 w-6 text-slate-400 mx-auto" />
                     <p className="text-xs font-bold text-slate-700">
-                      Click to choose document file (Image or PDF)
+                      Tap to choose document file (Camera, Gallery, or PDF)
                     </p>
                     <p className="text-[11px] text-slate-400">
-                      Max file size: 8MB. Securely encrypted and protected under DPDP Act 2023.
+                      Max file size: 20MB. Securely encrypted and protected under DPDP Act 2023.
                     </p>
                   </div>
                 )}
-              </div>
+              </label>
             </div>
           </div>
 
@@ -495,7 +586,7 @@ export default function ProfileSettingsPage() {
           </div>
         </div>
 
-        {/* Save Button */}
+        {/* Save Button (Desktop) */}
         <div className="flex items-center justify-end gap-3 pt-2">
           <Button
             type="submit"
@@ -506,6 +597,23 @@ export default function ProfileSettingsPage() {
           >
             <Save className="h-4 w-4 mr-2" />
             Save Profile & Details
+          </Button>
+        </div>
+
+        {/* Mobile Sticky Quick Save Bar */}
+        <div className="sm:hidden fixed bottom-3 left-3 right-3 z-40 bg-white/95 backdrop-blur-md p-3 rounded-2xl border border-slate-200 shadow-luxury flex items-center justify-between gap-3">
+          <span className="text-xs font-bold text-navy-950 truncate">
+            {hasPhotoChanged ? "📸 Photo ready to save" : "Profile Details"}
+          </span>
+          <Button
+            type="submit"
+            variant="teal"
+            size="sm"
+            isLoading={isSaving}
+            className="font-bold shadow-sm flex-shrink-0"
+          >
+            <Save className="h-3.5 w-3.5 mr-1" />
+            Save Profile
           </Button>
         </div>
       </form>
