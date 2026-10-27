@@ -528,49 +528,62 @@ export default function ProfileSettingsPage() {
                 className="sr-only"
               />
 
-              <label
-                htmlFor="doc-upload-input"
-                className="block border-2 border-dashed border-slate-200 hover:border-teal-500 rounded-2xl p-5 text-center cursor-pointer transition-colors bg-slate-50/50 hover:bg-teal-50/30"
-              >
-                {isCompressingDoc ? (
+              {isCompressingDoc ? (
+                <div className="border-2 border-teal-400 bg-teal-50/50 rounded-2xl p-5 text-center">
                   <div className="flex items-center justify-center gap-2 text-teal-800 text-xs font-bold animate-pulse">
-                    <Loader2 className="h-5 w-5 animate-spin" />
+                    <Loader2 className="h-5 w-5 animate-spin text-teal-700" />
                     <span>Processing Document File...</span>
                   </div>
-                ) : (documentUrl || documentFileName) ? (
-                  <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 bg-emerald-50/90 p-4 rounded-2xl border-2 border-emerald-300 text-left">
-                    <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-xl bg-emerald-600 text-white flex items-center justify-center flex-shrink-0 shadow-xs">
-                        <FileCheck className="h-5 w-5" />
-                      </div>
-                      <div>
-                        <div className="flex items-center gap-2">
-                          <p className="text-xs font-bold text-emerald-950">
-                            {documentFileName || "Identity Document Attached"}
-                          </p>
-                          <Badge variant="success" className="text-[9px] py-0">Document Attached</Badge>
-                        </div>
-                        <span className="text-[11px] text-emerald-700">
-                          {documentType.toUpperCase()} document proof ready for verification review
+                </div>
+              ) : (documentUrl || documentFileName) ? (
+                <label
+                  htmlFor="doc-upload-input"
+                  className="block w-full bg-emerald-50/95 hover:bg-emerald-100/70 transition-colors p-4 rounded-2xl border-2 border-emerald-400 text-left cursor-pointer shadow-xs"
+                >
+                  <div className="flex items-start gap-3 w-full min-w-0">
+                    <div className="w-10 h-10 rounded-xl bg-emerald-600 text-white flex items-center justify-center flex-shrink-0 shadow-xs mt-0.5">
+                      <FileCheck className="h-5 w-5" />
+                    </div>
+                    <div className="min-w-0 flex-1 space-y-1.5">
+                      <div className="flex flex-wrap items-center gap-1.5">
+                        <Badge variant="success" className="text-[9px] sm:text-[10px] py-0.5 px-2 font-bold tracking-wide flex-shrink-0">
+                          ✓ Document Attached
+                        </Badge>
+                        <span className="text-[10px] font-semibold text-emerald-800 bg-emerald-200/70 px-2 py-0.5 rounded-md flex-shrink-0">
+                          {documentType.toUpperCase()}
                         </span>
                       </div>
+                      <p className="text-xs font-bold text-emerald-950 break-all leading-snug">
+                        {documentFileName || "Identity Document Attached"}
+                      </p>
+                      <p className="text-[11px] text-emerald-700">
+                        Document proof securely attached & ready for review
+                      </p>
                     </div>
-                    <span className="text-xs font-bold text-emerald-800 hover:text-emerald-950 underline cursor-pointer">
-                      Tap to replace file
+                  </div>
+                  <div className="mt-3 pt-2.5 border-t border-emerald-200/80 flex items-center justify-between text-xs text-emerald-800">
+                    <span className="text-[11px] text-emerald-700">Want to change file?</span>
+                    <span className="font-bold underline hover:text-emerald-950">
+                      Tap to replace file →
                     </span>
                   </div>
-                ) : (
+                </label>
+              ) : (
+                <label
+                  htmlFor="doc-upload-input"
+                  className="block border-2 border-dashed border-slate-200 hover:border-teal-500 rounded-2xl p-5 text-center cursor-pointer transition-colors bg-slate-50/50 hover:bg-teal-50/30"
+                >
                   <div className="space-y-1">
                     <Upload className="h-6 w-6 text-slate-400 mx-auto" />
                     <p className="text-xs font-bold text-slate-700">
                       Tap to choose document file (Camera, Gallery, or PDF)
                     </p>
                     <p className="text-[11px] text-slate-400">
-                      Max file size: 20MB. Securely encrypted and protected under DPDP Act 2023.
+                      Max file size: 25MB. Securely encrypted and protected under DPDP Act 2023.
                     </p>
                   </div>
-                )}
-              </label>
+                </label>
+              )}
             </div>
           </div>
 
@@ -597,34 +610,17 @@ export default function ProfileSettingsPage() {
           </div>
         </div>
 
-        {/* Save Button (Desktop) */}
-        <div className="flex items-center justify-end gap-3 pt-2">
+        {/* Save Button (Clean, full-width on mobile with generous bottom padding, no floating collisions) */}
+        <div className="pt-3 pb-12 sm:pb-6 flex justify-end">
           <Button
             type="submit"
             variant="teal"
             size="lg"
             isLoading={isSaving}
-            className="font-bold px-8 shadow-md"
+            className="w-full sm:w-auto font-bold px-8 py-3.5 shadow-md flex items-center justify-center text-sm"
           >
             <Save className="h-4 w-4 mr-2" />
             Save Profile & Details
-          </Button>
-        </div>
-
-        {/* Mobile Sticky Quick Save Bar */}
-        <div className="sm:hidden fixed bottom-3 left-3 right-3 z-40 bg-white/95 backdrop-blur-md p-3 rounded-2xl border border-slate-200 shadow-luxury flex items-center justify-between gap-3">
-          <span className="text-xs font-bold text-navy-950 truncate">
-            {hasPhotoChanged ? "📸 Photo ready to save" : "Profile Details"}
-          </span>
-          <Button
-            type="submit"
-            variant="teal"
-            size="sm"
-            isLoading={isSaving}
-            className="font-bold shadow-sm flex-shrink-0"
-          >
-            <Save className="h-3.5 w-3.5 mr-1" />
-            Save Profile
           </Button>
         </div>
       </form>

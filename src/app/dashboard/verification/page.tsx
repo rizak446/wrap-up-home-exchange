@@ -168,22 +168,44 @@ export default function VerificationCenterPage() {
                 className="sr-only"
               />
 
-              <label
-                htmlFor="verify-doc-input"
-                className="block p-6 rounded-2xl border-2 border-dashed border-slate-300 hover:border-teal-500 text-center cursor-pointer transition-colors bg-slate-50/50 hover:bg-teal-50/30"
-              >
-                {uploadedFile ? (
-                  <div className="flex items-center justify-center gap-3">
-                    <FileCheck className="h-7 w-7 text-emerald-600" />
-                    <div className="text-left">
-                      <div className="flex items-center gap-1.5">
-                        <span className="text-xs font-bold text-emerald-950">{uploadedFile.name}</span>
-                        <Badge variant="success" className="text-[9px]">Ready to Submit</Badge>
+              {uploadedFile ? (
+                <label
+                  htmlFor="verify-doc-input"
+                  className="block w-full bg-emerald-50/95 hover:bg-emerald-100/70 transition-colors p-4 rounded-2xl border-2 border-emerald-400 text-left cursor-pointer shadow-xs"
+                >
+                  <div className="flex items-start gap-3 w-full min-w-0">
+                    <div className="w-10 h-10 rounded-xl bg-emerald-600 text-white flex items-center justify-center flex-shrink-0 shadow-xs mt-0.5">
+                      <FileCheck className="h-5 w-5" />
+                    </div>
+                    <div className="min-w-0 flex-1 space-y-1.5">
+                      <div className="flex flex-wrap items-center gap-1.5">
+                        <Badge variant="success" className="text-[9px] sm:text-[10px] py-0.5 px-2 font-bold tracking-wide flex-shrink-0">
+                          ✓ Ready to Submit
+                        </Badge>
+                        <span className="text-[10px] font-semibold text-emerald-800 bg-emerald-200/70 px-2 py-0.5 rounded-md flex-shrink-0">
+                          {docType.toUpperCase()}
+                        </span>
                       </div>
-                      <span className="text-[11px] text-slate-500">Size: {uploadedFile.size} • Tap to change</span>
+                      <p className="text-xs font-bold text-emerald-950 break-all leading-snug">
+                        {uploadedFile.name}
+                      </p>
+                      <p className="text-[11px] text-slate-500">
+                        Size: {uploadedFile.size} • Tap to change file
+                      </p>
                     </div>
                   </div>
-                ) : (
+                  <div className="mt-3 pt-2.5 border-t border-emerald-200/80 flex items-center justify-between text-xs text-emerald-800">
+                    <span className="text-[11px] text-emerald-700">Want to choose another file?</span>
+                    <span className="font-bold underline hover:text-emerald-950">
+                      Tap to replace file →
+                    </span>
+                  </div>
+                </label>
+              ) : (
+                <label
+                  htmlFor="verify-doc-input"
+                  className="block p-6 rounded-2xl border-2 border-dashed border-slate-300 hover:border-teal-500 text-center cursor-pointer transition-colors bg-slate-50/50 hover:bg-teal-50/30"
+                >
                   <div className="space-y-1.5">
                     <Upload className="h-8 w-8 text-slate-400 mx-auto" />
                     <p className="text-xs font-bold text-slate-700">
@@ -193,8 +215,8 @@ export default function VerificationCenterPage() {
                       Supports PDF, JPG, PNG up to 25MB. Securely encrypted and protected under DPDP Act 2023.
                     </p>
                   </div>
-                )}
-              </label>
+                </label>
+              )}
             </div>
 
             <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200 text-xs text-slate-600 space-y-2 leading-relaxed">
@@ -207,8 +229,14 @@ export default function VerificationCenterPage() {
               </p>
             </div>
 
-            <div className="pt-2 flex justify-end">
-              <Button type="submit" variant="teal" size="md" isLoading={isSubmitting}>
+            <div className="pt-2 pb-8 sm:pb-2 flex justify-end">
+              <Button
+                type="submit"
+                variant="teal"
+                size="md"
+                isLoading={isSubmitting}
+                className="w-full sm:w-auto font-bold px-6 py-3 shadow-md flex items-center justify-center text-sm"
+              >
                 Submit for Verification Review
               </Button>
             </div>
