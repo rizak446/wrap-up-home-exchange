@@ -29,7 +29,7 @@ export default function CookiesPage() {
           </div>
 
           <p>
-            HavenSwap utilizes essential and functional browser cookies strictly to maintain authenticated user sessions, prevent cross-site request forgery (CSRF), and remember your currency or language preferences. We do not use third-party invasive advertising cookies or cross-site tracking pixels.
+            Wrap-Up utilizes essential and functional browser cookies strictly to maintain authenticated user sessions, prevent cross-site request forgery (CSRF), and remember your currency or language preferences. We do not use third-party invasive advertising cookies or cross-site tracking pixels.
           </p>
         </div>
       </div>

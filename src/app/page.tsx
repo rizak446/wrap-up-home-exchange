@@ -76,7 +76,7 @@ export default function HomePage() {
   const faqs = [
     {
       q: "How does non-reciprocal home exchange work with credits?",
-      a: "Traditional swaps require you to find someone in another city who wants to visit your exact city at the exact same dates. With HavenSwap's credit system, you host a traveler in your Bhopal home and earn credits. You can then use those accumulated credits at any time to stay at an ocean villa in Goa or a heritage haveli in Jaipur, without the other homeowner having to visit your home.",
+      a: "Traditional swaps require you to find someone in another city who wants to visit your exact city at the exact same dates. With Wrap-Up's credit system, you host a traveler in your Bhopal home and earn credits. You can then use those accumulated credits at any time to stay at an ocean villa in Goa or a heritage haveli in Jaipur, without the other homeowner having to visit your home.",
     },
     {
       q: "Is my physical home address visible to everyone on the internet?",
@@ -109,7 +109,7 @@ export default function HomePage() {
         <div className="relative z-10 max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-20 text-center">
           <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-teal-950/80 border border-teal-500/40 text-teal-300 text-xs font-bold tracking-wide uppercase mb-6 backdrop-blur-md">
             <Sparkles className="h-4 w-4 text-teal-400" />
-            <span>The Premier Non-Reciprocal Home Exchange</span>
+            <span>Wrap-Up • Travel More • Spend Less</span>
           </div>
 
           <h1 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight text-white font-serif max-w-4xl mx-auto leading-[1.15]">
@@ -221,7 +221,7 @@ export default function HomePage() {
               Non-Reciprocal Exchange
             </Badge>
             <h2 className="text-3xl sm:text-4xl font-extrabold text-navy-950 font-serif">
-              How the HavenSwap Credit System Works
+              How the Wrap-Up Credit System Works
             </h2>
             <p className="mt-4 text-slate-600 text-base leading-relaxed">
               You do not need to coordinate a simultaneous exchange with the same homeowner. Our double-entry credit ledger enables frictionless travel anywhere.
@@ -366,7 +366,7 @@ export default function HomePage() {
               Popular Cities
             </Badge>
             <h2 className="text-3xl font-extrabold text-navy-950 font-serif">
-              Where HavenSwap Members Are Traveling
+              Where Wrap-Up Members Are Traveling
             </h2>
             <p className="mt-3 text-slate-600 text-sm">
               Discover verified homes available for exchange across India's most sought-after leisure and work destinations.
@@ -415,7 +415,7 @@ export default function HomePage() {
                 Designed Around Mutual Respect, Verified Identity, and Data Privacy.
               </h2>
               <p className="mt-4 text-slate-300 text-base leading-relaxed">
-                Hosting a traveler or entering someone’s private home demands uncompromising security standards. HavenSwap operates as a verified home exchange community, not an anonymous listing board.
+                Hosting a traveler or entering someone’s private home demands uncompromising security standards. Wrap-Up operates as a verified home exchange community, not an anonymous listing board.
               </p>
 
               <div className="mt-8 space-y-4">

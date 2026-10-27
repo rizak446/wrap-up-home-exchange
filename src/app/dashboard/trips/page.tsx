@@ -299,7 +299,7 @@ export default function MyTripsPage() {
           <div className="text-center py-6 space-y-2">
             <CheckCircle2 className="h-10 w-10 text-emerald-600 mx-auto" />
             <h3 className="font-bold text-navy-950">Review Published!</h3>
-            <p className="text-xs text-slate-500">Thank you for contributing to the HavenSwap verified community.</p>
+            <p className="text-xs text-slate-500">Thank you for contributing to the Wrap-Up verified community.</p>
           </div>
         ) : (
           <div className="space-y-4 text-xs">

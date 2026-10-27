@@ -25,7 +25,7 @@ export default function NotificationsPage() {
           {
             id: "n-1",
             user_id: currentUser.id,
-            title: "Welcome to HavenSwap! 🌟",
+            title: "Welcome to Wrap-Up! 🌟",
             message: "Your identity verification is approved and 150 welcome credits have been credited to your wallet.",
             category: "credit_update",
             link_url: "/dashboard/wallet",

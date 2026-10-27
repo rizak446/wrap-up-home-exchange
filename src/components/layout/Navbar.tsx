@@ -42,16 +42,20 @@ export default function Navbar() {
         <div className="flex h-20 items-center justify-between gap-4">
           {/* Logo & Brand */}
           <Link href="/" className="flex items-center gap-3 group">
-            <div className="h-11 w-11 rounded-2xl bg-gradient-to-br from-navy-950 via-slate-900 to-teal-800 flex items-center justify-center text-white shadow-md shadow-navy-950/20 group-hover:scale-105 transition-transform">
-              <Compass className="h-6 w-6 text-teal-400" />
+            <div className="h-11 w-11 rounded-2xl overflow-hidden shadow-sm group-hover:scale-105 transition-transform bg-[#FBF8F3] border border-slate-200/80 p-0.5 flex items-center justify-center">
+              <img
+                src="/wrap-up-logo.jpg"
+                alt="Wrap-Up Logo"
+                className="h-full w-full object-contain"
+              />
             </div>
             <div className="flex flex-col">
               <div className="flex items-center gap-1.5">
                 <span className="text-2xl font-extrabold tracking-tight text-navy-950 font-serif">
-                  Haven<span className="text-teal-600">Swap</span>
+                  Wrap<span className="text-[#C47A46]">-Up</span>
                 </span>
               </div>
-              <span className="text-[11px] text-slate-500 font-medium">Curated Home Exchange</span>
+              <span className="text-[11px] text-slate-500 font-medium">Travel More • Spend Less</span>
             </div>
           </Link>
 

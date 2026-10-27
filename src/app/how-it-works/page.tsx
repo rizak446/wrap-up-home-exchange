@@ -20,7 +20,7 @@ export default function HowItWorksPage() {
     {
       num: "01",
       title: "Create an Account & Verify Identity",
-      desc: "Join HavenSwap by registering your basic details. In compliance with safety standards and India's DPDP Act 2023, upload a government ID to unlock your Verified Member badge and 150 welcome credits.",
+      desc: "Join Wrap-Up by registering your basic details. In compliance with safety standards and India's DPDP Act 2023, upload a government ID to unlock your Verified Member badge and 150 welcome credits.",
     },
     {
       num: "02",
@@ -58,7 +58,7 @@ export default function HowItWorksPage() {
             Platform Blueprint
           </Badge>
           <h1 className="text-3xl sm:text-5xl font-extrabold font-serif tracking-tight">
-            How HavenSwap Works
+            How Wrap-Up Works
           </h1>
           <p className="mt-4 text-slate-300 text-base sm:text-lg max-w-2xl mx-auto leading-relaxed">
             Non-reciprocal travel powered by double-entry credit ledger technology. No forced direct swaps, no inflated hotel bills.
@@ -80,7 +80,7 @@ export default function HowItWorksPage() {
             <div className="p-4 rounded-2xl bg-slate-50 border border-slate-100 space-y-2">
               <span className="font-bold text-navy-950 text-sm block">1. Rajesh in Bhopal</span>
               <p>
-                Rajesh lives in Bhopal. He lists his lakeview residence on HavenSwap. While travelling on business, a verified member stays for 4 nights, earning Rajesh 300 credits.
+                Rajesh lives in Bhopal. He lists his lakeview residence on Wrap-Up. While travelling on business, a verified member stays for 4 nights, earning Rajesh 300 credits.
               </p>
             </div>
             <div className="p-4 rounded-2xl bg-slate-50 border border-slate-100 space-y-2">

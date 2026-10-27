@@ -382,7 +382,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const supabase = createClient();
       const { data: authData, error: authError } = await supabase.auth.signUp({
         email: data.email,
-        password: data.password || "HavenSwap2026!",
+        password: data.password || "WrapUp2026!",
         options: {
           data: {
             full_name: data.fullName,

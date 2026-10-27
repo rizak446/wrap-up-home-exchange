@@ -29,7 +29,7 @@ export default function SupportPage() {
             Care & Resolutions
           </Badge>
           <h1 className="text-3xl sm:text-4xl font-extrabold font-serif tracking-tight">
-            HavenSwap Help Center & Support Desk
+            Wrap-Up Help Center & Support Desk
           </h1>
           <p className="mt-3 text-slate-300 text-sm sm:text-base max-w-xl mx-auto">
             Need assistance with a stay request, credit ledger inquiry, or member verification? Our dedicated team is here to assist.

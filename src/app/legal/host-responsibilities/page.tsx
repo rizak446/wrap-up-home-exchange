@@ -24,7 +24,7 @@ export default function HostResponsibilitiesPage() {
               Host Responsibilities & Guidelines
             </h1>
             <p className="text-xs text-slate-400 mt-1">
-              Legal, safety, and hospitality covenants for homeowners listing on HavenSwap
+              Legal, safety, and hospitality covenants for homeowners listing on Wrap-Up
             </p>
           </div>
 

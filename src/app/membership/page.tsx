@@ -261,7 +261,7 @@ export default function MembershipPage() {
           <div className="p-4 rounded-2xl bg-teal-50 border border-teal-200 text-teal-900 leading-relaxed">
             <h4 className="font-bold text-sm mb-1">Payment Provider Architecture</h4>
             <p>
-              HavenSwap integrates with authorized payment providers (such as Razorpay for INR cards, UPI, and NetBanking). Webhooks verify payments server-side before activating subscriptions.
+              Wrap-Up integrates with authorized payment providers (such as Razorpay for INR cards, UPI, and NetBanking). Webhooks verify payments server-side before activating subscriptions.
             </p>
           </div>
 

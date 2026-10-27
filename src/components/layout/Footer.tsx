@@ -8,13 +8,20 @@ export default function Footer() {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-10">
           {/* Brand & Mission */}
           <div className="lg:col-span-2 space-y-4">
-            <Link href="/" className="flex items-center gap-2.5">
-              <div className="h-9 w-9 rounded-xl bg-navy-950 flex items-center justify-center text-teal-400">
-                <Compass className="h-5 w-5" />
+            <Link href="/" className="flex items-center gap-3">
+              <div className="h-10 w-10 rounded-2xl overflow-hidden shadow-sm bg-[#FBF8F3] border border-slate-200/80 p-0.5 flex items-center justify-center">
+                <img
+                  src="/wrap-up-logo.jpg"
+                  alt="Wrap-Up Logo"
+                  className="h-full w-full object-contain"
+                />
               </div>
-              <span className="text-xl font-extrabold text-navy-950 font-serif">
-                Haven<span className="text-teal-600">Swap</span>
-              </span>
+              <div className="flex flex-col">
+                <span className="text-xl font-extrabold text-navy-950 font-serif">
+                  Wrap<span className="text-[#C47A46]">-Up</span>
+                </span>
+                <span className="text-[10px] text-slate-500 font-medium">Travel More • Spend Less</span>
+              </div>
             </Link>
             <p className="text-slate-500 text-sm leading-relaxed max-w-sm">
               The premier, trust-anchored home exchange platform. Swap access to verified homes, host travelers to earn credits, and explore Bhopal, Goa, Jaipur, Bengaluru, and beyond without prohibitive lodging bills.
@@ -136,12 +143,12 @@ export default function Footer() {
         {/* Regulatory Disclosure Notice */}
         <div className="mt-12 pt-8 border-t border-slate-100 space-y-4">
           <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200/80 text-xs text-slate-500 leading-relaxed">
-            <strong>Platform Transparency Notice:</strong> HavenSwap facilitates non-reciprocal home exchanges through internal platform utility credits and verified membership subscriptions. Accommodations are not unconditionally free; users may require membership plans, platform safety fee credits, or host-approved deposits. Physical residential addresses are protected and never revealed publicly prior to mutual booking confirmation. Draft legal documents provided herein are subject to professional legal review in accordance with applicable local housing society and tenancy statutes.
+            <strong>Platform Transparency Notice:</strong> Wrap-Up facilitates non-reciprocal home exchanges through internal platform utility credits and verified membership subscriptions. Accommodations are not unconditionally free; users may require membership plans, platform safety fee credits, or host-approved deposits. Physical residential addresses are protected and never revealed publicly prior to mutual booking confirmation. Draft legal documents provided herein are subject to professional legal review in accordance with applicable local housing society and tenancy statutes.
           </div>
 
           <div className="flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-slate-500">
             <div>
-              &copy; {new Date().getFullYear()} HavenSwap Technologies Private Limited. All rights reserved.
+              &copy; {new Date().getFullYear()} Wrap-Up Technologies Private Limited. All rights reserved.
             </div>
             <div className="flex items-center gap-4">
               <span>Made with care for curious, trustworthy travelers</span>

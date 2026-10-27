@@ -57,13 +57,20 @@ export default function LoginPage() {
 
             {/* Logo */}
             <div className="relative z-10">
-              <Link href="/" className="inline-flex items-center gap-2.5 group">
-                <div className="h-10 w-10 rounded-2xl bg-teal-500 flex items-center justify-center text-navy-950 group-hover:scale-105 transition-transform shadow-md shadow-teal-500/20">
-                  <Compass className="h-5 w-5" />
+              <Link href="/" className="inline-flex items-center gap-3 group">
+                <div className="h-11 w-11 rounded-2xl overflow-hidden shadow-sm group-hover:scale-105 transition-transform bg-[#FBF8F3] border border-white/20 p-0.5 flex items-center justify-center">
+                  <img
+                    src="/wrap-up-logo.jpg"
+                    alt="Wrap-Up Logo"
+                    className="h-full w-full object-contain"
+                  />
                 </div>
-                <span className="text-2xl font-extrabold tracking-tight text-white font-serif">
-                  Haven<span className="text-teal-400">Swap</span>
-                </span>
+                <div className="flex flex-col">
+                  <span className="text-2xl font-extrabold tracking-tight text-white font-serif">
+                    Wrap<span className="text-[#C47A46]">-Up</span>
+                  </span>
+                  <span className="text-[11px] text-slate-300 font-medium">Travel More • Spend Less</span>
+                </div>
               </Link>
               <p className="mt-3 text-xs text-slate-300 leading-relaxed max-w-sm">
                 Curated home exchange and non-reciprocal stay credits across India.
@@ -113,12 +120,16 @@ export default function LoginPage() {
           <div className="lg:col-span-7 p-6 sm:p-10 lg:p-12 flex flex-col justify-between">
             {/* Mobile Header */}
             <div className="lg:hidden flex items-center justify-between mb-6 pb-4 border-b border-slate-100">
-              <Link href="/" className="inline-flex items-center gap-2">
-                <div className="h-9 w-9 rounded-xl bg-navy-950 flex items-center justify-center text-teal-400">
-                  <Compass className="h-5 w-5" />
+              <Link href="/" className="inline-flex items-center gap-2.5">
+                <div className="h-8 w-8 rounded-xl overflow-hidden shadow-sm bg-[#FBF8F3] border border-slate-200/80 p-0.5 flex items-center justify-center">
+                  <img
+                    src="/wrap-up-logo.jpg"
+                    alt="Wrap-Up Logo"
+                    className="h-full w-full object-contain"
+                  />
                 </div>
                 <span className="text-xl font-extrabold text-navy-950 font-serif">
-                  Haven<span className="text-teal-600">Swap</span>
+                  Wrap<span className="text-[#C47A46]">-Up</span>
                 </span>
               </Link>
               <Link href="/auth/register" className="text-xs font-bold text-teal-700 hover:underline">

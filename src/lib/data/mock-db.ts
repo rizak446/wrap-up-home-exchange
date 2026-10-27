@@ -112,7 +112,7 @@ export const INITIAL_USERS: UserProfile[] = [
     phone: "+91 99999 00001",
     country: "India",
     city: "New Delhi",
-    bio: "Head of Trust & Safety and Platform Operations at HavenSwap.",
+    bio: "Head of Trust & Safety and Platform Operations at Wrap-Up.",
     avatar_url: "https://images.unsplash.com/photo-1580489944761-15a19d654956?w=300&auto=format&fit=crop&q=80",
     identity_verified: true,
     property_verified: true,
@@ -582,7 +582,7 @@ export const INITIAL_NOTIFICATIONS: NotificationItem[] = [
   {
     id: "notif-1",
     user_id: "user-traveler-arjun",
-    title: "Welcome to HavenSwap! 🌟",
+    title: "Welcome to Wrap-Up! 🌟",
     message: "Your identity verification is approved and 150 welcome credits have been credited to your wallet.",
     category: "credit_update",
     link_url: "/dashboard/wallet",

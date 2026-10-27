@@ -29,7 +29,7 @@ export default function PrivacyPage() {
           </div>
 
           <div className="p-4 rounded-2xl bg-teal-50 border border-teal-200 text-xs text-teal-900 leading-relaxed">
-            <strong>Compliance Principle:</strong> HavenSwap operates on a privacy-by-default architecture. We collect solely necessary data required to ensure physical safety, fraud mitigation, and booking execution.
+            <strong>Compliance Principle:</strong> Wrap-Up operates on a privacy-by-default architecture. We collect solely necessary data required to ensure physical safety, fraud mitigation, and booking execution.
           </div>
 
           <section className="space-y-3">

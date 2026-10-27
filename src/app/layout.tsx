@@ -10,19 +10,24 @@ export const viewport: Viewport = {
 };
 
 export const metadata: Metadata = {
-  title: "HavenSwap — Curated Home Exchange & Travel Platform",
+  title: "Wrap-Up — Curated Home Exchange & Travel Platform",
   description:
-    "Exchange access to verified homes, host travelers to earn credits, and stay across Bhopal, Goa, Jaipur, Bengaluru, and worldwide without paying expensive hotel bills.",
+    "Wrap-Up: Travel More, Spend Less. Exchange access to verified homes, host travelers to earn credits, and stay across Bhopal, Goa, Jaipur, Bengaluru, and worldwide without paying expensive hotel bills.",
   keywords: [
+    "Wrap-Up",
     "home exchange",
     "travel credits",
     "house swapping India",
     "Goa villas",
     "Bhopal stay",
     "non-reciprocal exchange",
-    "HavenSwap",
+    "Travel More Spend Less",
   ],
-  authors: [{ name: "HavenSwap Team" }],
+  authors: [{ name: "Wrap-Up Team" }],
+  icons: {
+    icon: "/wrap-up-logo.jpg",
+    apple: "/wrap-up-logo.jpg",
+  },
 };
 
 export default function RootLayout({

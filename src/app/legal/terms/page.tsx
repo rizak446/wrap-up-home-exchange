@@ -21,7 +21,7 @@ export default function TermsPage() {
               Draft Legal Agreement
             </Badge>
             <h1 className="text-3xl font-extrabold text-navy-950 font-serif">
-              HavenSwap Platform Terms of Service
+              Wrap-Up Platform Terms of Service
             </h1>
             <p className="text-xs text-slate-400 mt-1">
               Version 1.0 • Effective Date: October 2026 • Prepared for professional legal counsel review
@@ -29,13 +29,13 @@ export default function TermsPage() {
           </div>
 
           <div className="p-4 rounded-2xl bg-amber-50 border border-amber-200 text-xs text-amber-800">
-            <strong>Important Legal Notice:</strong> These terms are provided as an explicit draft template reflecting the actual operational rules of HavenSwap. The presence of these pages does not itself constitute formal legal advice or substitute for localized jurisdiction review under Indian or international tenancy statutes.
+            <strong>Important Legal Notice:</strong> These terms are provided as an explicit draft template reflecting the actual operational rules of Wrap-Up. The presence of these pages does not itself constitute formal legal advice or substitute for localized jurisdiction review under Indian or international tenancy statutes.
           </div>
 
           <section className="space-y-3">
             <h2 className="text-lg font-bold text-navy-950">1. Nature of the Service</h2>
             <p>
-              HavenSwap is an invite-only and membership-verified peer-to-peer home exchange marketplace. Members offer temporary access to residential premises owned or authorized by them in exchange for platform utility credits. HavenSwap is not a hotel, travel agency, real estate broker, or insurer.
+              Wrap-Up is an invite-only and membership-verified peer-to-peer home exchange marketplace. Members offer temporary access to residential premises owned or authorized by them in exchange for platform utility credits. Wrap-Up is not a hotel, travel agency, real estate broker, or insurer.
             </p>
           </section>
 

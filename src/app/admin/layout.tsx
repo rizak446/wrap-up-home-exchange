@@ -29,7 +29,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       <div className="bg-rose-900 text-rose-100 px-4 py-2 text-xs flex items-center justify-between font-semibold">
         <div className="flex items-center gap-2">
           <Lock className="h-3.5 w-3.5 text-rose-300" />
-          <span>Restricted Portal: HavenSwap Trust & Safety Operations [Least Privilege Access]</span>
+          <span>Restricted Portal: Wrap-Up Trust & Safety Operations [Least Privilege Access]</span>
         </div>
         <div className="flex items-center gap-3">
           <span>Logged in as: <strong>{currentUser?.full_name} ({currentUser?.role})</strong></span>
