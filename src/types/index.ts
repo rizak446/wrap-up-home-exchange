@@ -109,6 +109,7 @@ export interface Property {
   verification_status: 'unverified' | 'pending' | 'verified' | 'rejected';
   images: PropertyImage[];
   amenities: Amenity[];
+  verifications?: any[];
   rating?: number;
   review_count?: number;
   created_at: string;

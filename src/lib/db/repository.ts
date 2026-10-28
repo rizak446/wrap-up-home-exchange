@@ -132,6 +132,9 @@ export const repository = {
     maxCredits?: number;
     propertyType?: string;
     verifiedOnly?: boolean;
+    hostId?: string;
+    status?: string;
+    admin?: boolean;
     sort?: "relevance" | "price_asc" | "price_desc" | "newest";
   }): Promise<Property[]> {
     // Try querying Supabase live table first
@@ -143,8 +146,19 @@ export const repository = {
         const sb = createClient(supabaseUrl, supabaseAnonKey);
         let query = sb
           .from("properties")
-          .select("*, property_images(*)")
-          .eq("status", "published");
+          .select("*, property_images(*), host:profiles!properties_host_id_fkey(*), property_verifications(*)");
+
+        if (filters?.hostId) {
+          query = query.eq("host_id", filters.hostId);
+        } else if (filters?.admin) {
+          // Admin can see all statuses (pending_review, published, rejected)
+          if (filters?.status) {
+            query = query.eq("status", filters.status);
+          }
+        } else {
+          // Public explore displays only published properties
+          query = query.eq("status", "published");
+        }
 
         if (filters?.city && filters.city.trim() !== "") {
           const q = filters.city.toLowerCase().trim();
@@ -169,7 +183,7 @@ export const repository = {
           query = query.order("credits_per_night", { ascending: true });
         } else if (filters?.sort === "price_desc") {
           query = query.order("credits_per_night", { ascending: false });
-        } else if (filters?.sort === "newest") {
+        } else {
           query = query.order("created_at", { ascending: false });
         }
 
@@ -187,18 +201,31 @@ export const repository = {
                 is_cover: true,
               }
             ],
+            host: d.host || {
+              id: d.host_id,
+              full_name: "Verified Host",
+              email: "host@havenswap.com",
+              avatar_url: undefined,
+              city: d.city,
+            },
+            verifications: d.property_verifications || [],
             amenities: [],
             rating: 5.0,
             review_count: 0,
           }));
         }
       }
-    } catch {
-      // Fallback gracefully to mock store
+    } catch (e) {
+      console.warn("Failed to query Supabase properties:", e);
     }
 
     const store = getStore();
-    let results = store.properties.filter((p) => p.status === "published");
+    let results = store.properties;
+    if (filters?.hostId) {
+      results = results.filter((p) => p.host_id === filters.hostId);
+    } else if (!filters?.admin) {
+      results = results.filter((p) => p.status === "published");
+    }
 
     if (filters?.city && filters.city.trim() !== "") {
       const q = filters.city.toLowerCase().trim();
@@ -235,7 +262,7 @@ export const repository = {
       results.sort((a, b) => a.credits_per_night - b.credits_per_night);
     } else if (filters?.sort === "price_desc") {
       results.sort((a, b) => b.credits_per_night - a.credits_per_night);
-    } else if (filters?.sort === "newest") {
+    } else {
       results.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
     }
 
@@ -243,8 +270,7 @@ export const repository = {
   },
 
   async getAllPropertiesForAdmin(): Promise<Property[]> {
-    const store = getStore();
-    return store.properties;
+    return this.getProperties({ admin: true });
   },
 
   async getPropertyById(id: string): Promise<Property | null> {
@@ -301,11 +327,10 @@ export const repository = {
   },
 
   async getPropertiesByHost(hostId: string): Promise<Property[]> {
-    const store = getStore();
-    return store.properties.filter((p) => p.host_id === hostId);
+    return this.getProperties({ hostId });
   },
 
-  async createProperty(data: Partial<Property>, hostId: string): Promise<Property> {
+  async createProperty(data: Partial<Property> & { ownership_document?: string; document_type?: string }, hostId: string): Promise<Property> {
     const store = getStore();
     const host = store.users.find((u) => u.id === hostId);
 
@@ -398,8 +423,8 @@ export const repository = {
           cleaning_expectations: newProperty.cleaning_expectations || null,
           pet_policy: newProperty.pet_policy,
           smoking_policy: newProperty.smoking_policy,
-          status: "published", // Auto-publish so immediately visible in Explore
-          verification_status: "verified",
+          status: "pending_review",
+          verification_status: "pending",
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString(),
         };
@@ -413,8 +438,10 @@ export const repository = {
 
         if (!propErr && insertedProp) {
           newProperty.id = insertedProp.id;
-          newProperty.status = "published";
-          newProperty.verification_status = "verified";
+          newProperty.status = "pending_review";
+          newProperty.verification_status = "pending";
+
+          // 1. Insert property photos into property_images
           if (newProperty.images && newProperty.images.length > 0) {
             await sb.from("property_images").insert(
               newProperty.images.map((img, idx) => ({
@@ -427,6 +454,19 @@ export const repository = {
               }))
             );
           }
+
+          // 2. Insert property ownership proof document into property_verifications
+          const ownershipDoc = data.ownership_document || "Property Ownership / Utility Bill Proof Attached";
+          const docType = data.document_type || "utility_bill";
+          await sb.from("property_verifications").insert({
+            property_id: insertedProp.id,
+            verification_type: docType,
+            proof_ref: ownershipDoc,
+            status: "pending",
+            created_at: new Date().toISOString(),
+          });
+        } else {
+          console.error("Supabase property insertion error:", propErr);
         }
       } catch (e) {
         console.warn("Failed to sync property to Supabase:", e);
@@ -454,14 +494,61 @@ export const repository = {
     adminId: string,
     notes?: string
   ): Promise<Property | null> {
+    const isApproved = status === "published";
+    const verifStatus = isApproved ? "verified" : status === "rejected" ? "rejected" : "pending";
+
+    // 1. Update in Supabase live database
+    const sb = await getSupabaseServerClient();
+    if (sb) {
+      try {
+        await sb
+          .from("properties")
+          .update({
+            status,
+            verification_status: verifStatus,
+            updated_at: new Date().toISOString(),
+          })
+          .eq("id", id);
+
+        const { data: propRow } = await sb.from("properties").select("host_id").eq("id", id).maybeSingle();
+        if (propRow?.host_id && isApproved) {
+          // Upgrade host in profiles and user_roles
+          await sb
+            .from("profiles")
+            .update({
+              role: "host",
+              property_verified: true,
+              updated_at: new Date().toISOString(),
+            })
+            .eq("id", propRow.host_id);
+
+          await sb.from("user_roles").upsert({
+            user_id: propRow.host_id,
+            role: "host",
+          });
+        }
+
+        // Update verification record in property_verifications
+        await sb
+          .from("property_verifications")
+          .update({
+            status: verifStatus,
+            reviewer_id: adminId,
+            review_notes: notes || (isApproved ? "Approved by Trust & Safety Officer" : "Changes requested"),
+            reviewed_at: new Date().toISOString(),
+          })
+          .eq("property_id", id);
+      } catch (e) {
+        console.warn("Failed to update property status in Supabase:", e);
+      }
+    }
+
     const store = getStore();
     const prop = store.properties.find((p) => p.id === id);
     if (!prop) return null;
 
     prop.status = status;
-    if (status === "published") {
-      prop.verification_status = "verified";
-    }
+    prop.verification_status = verifStatus;
     prop.updated_at = new Date().toISOString();
 
     const admin = store.users.find((u) => u.id === adminId);
@@ -485,7 +572,7 @@ export const repository = {
       title: status === "published" ? "Listing Published! 🎉" : "Listing Status Update",
       message:
         status === "published"
-          ? `Your home "${prop.title}" is now live and can receive booking requests.`
+          ? `Congratulations! Your home "${prop.title}" is now verified and live on Wrap-Up.`
           : `Your listing "${prop.title}" status is now ${status}. ${notes ? `Note: ${notes}` : ""}`,
       category: "system",
       link_url: `/homes/${prop.id}`,
@@ -503,6 +590,36 @@ export const repository = {
   },
 
   async getAllUsers(): Promise<UserProfile[]> {
+    const sb = await getSupabaseServerClient();
+    if (sb) {
+      try {
+        const { data: dbProfiles, error } = await sb
+          .from("profiles")
+          .select("*")
+          .order("created_at", { ascending: false });
+
+        if (!error && dbProfiles && dbProfiles.length > 0) {
+          return dbProfiles.map((p) => ({
+            id: p.id,
+            email: p.email,
+            full_name: p.full_name || "Member",
+            role: (p.role as any) || "member",
+            city: p.city || "India",
+            country: p.country || "India",
+            phone: p.phone || "",
+            bio: p.bio || "",
+            avatar_url: p.avatar_url || undefined,
+            identity_verified: Boolean(p.identity_verified),
+            property_verified: Boolean(p.property_verified),
+            credits_balance: 100,
+            created_at: p.created_at,
+            updated_at: p.updated_at,
+          }));
+        }
+      } catch (e) {
+        console.warn("Failed to fetch profiles from Supabase:", e);
+      }
+    }
     const store = getStore();
     return store.users;
   },

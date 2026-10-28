@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
+import { UserAvatar } from "@/components/ui/avatar";
 import {
   Building,
   Users,
@@ -12,6 +13,11 @@ import {
   AlertCircle,
   Sparkles,
   Search,
+  FileCheck,
+  FileText,
+  Clock,
+  ExternalLink,
+  UserCheck,
 } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import { Button } from "@/components/ui/button";
@@ -30,7 +36,7 @@ export default function AdminDashboardPage() {
   const [actionMessage, setActionMessage] = useState<string | null>(null);
 
   // Credit Adjustment Form State
-  const [adjustUserId, setAdjustUserId] = useState("user-traveler-arjun");
+  const [adjustUserId, setAdjustUserId] = useState("");
   const [adjustAmount, setAdjustAmount] = useState<number>(50);
   const [adjustReason, setAdjustReason] = useState("Promotional goodwill adjustment for community testing");
   const [isAdjusting, setIsAdjusting] = useState(false);
@@ -38,9 +44,10 @@ export default function AdminDashboardPage() {
   const loadData = async () => {
     setIsLoading(true);
     try {
-      const [propsRes, credsRes] = await Promise.all([
-        fetch("/api/properties"),
+      const [propsRes, credsRes, usersRes] = await Promise.all([
+        fetch("/api/properties?admin=true"),
         fetch("/api/credits"),
+        fetch("/api/users"),
       ]);
 
       if (propsRes.ok) {
@@ -53,9 +60,16 @@ export default function AdminDashboardPage() {
         setAllTransactions(data.transactions || []);
       }
 
-      // Initial demo users and audit logs
-      const { INITIAL_USERS, INITIAL_AUDIT_LOGS } = await import("@/lib/data/mock-db");
-      setUsers(INITIAL_USERS);
+      if (usersRes.ok) {
+        const data = await usersRes.json();
+        setUsers(data.users || []);
+        if (data.users && data.users.length > 0 && !adjustUserId) {
+          setAdjustUserId(data.users[0].id);
+        }
+      }
+
+      // Initial audit logs
+      const { INITIAL_AUDIT_LOGS } = await import("@/lib/data/mock-db");
       setAuditLogs(INITIAL_AUDIT_LOGS);
     } catch (e) {
       console.error("Error loading admin data", e);
@@ -84,11 +98,36 @@ export default function AdminDashboardPage() {
       });
 
       if (res.ok) {
-        setActionMessage(`Property status updated to: ${status}`);
+        setActionMessage(
+          status === "published"
+            ? "✓ Property approved! Host verified and listing is now live on Wrap-Up."
+            : "Listing rejected and host notified."
+        );
         await loadData();
       }
     } catch (e: any) {
       setActionMessage(e.message || "Failed to update property status");
+    }
+  };
+
+  const handleToggleUserRole = async (userId: string, currentRole: string) => {
+    const newRole = currentRole === "host" ? "member" : "host";
+    try {
+      const res = await fetch("/api/users", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          userId,
+          role: newRole,
+          adminId: currentUser?.id || "admin",
+        }),
+      });
+      if (res.ok) {
+        setActionMessage(`User role successfully updated to: ${newRole}`);
+        await loadData();
+      }
+    } catch (e: any) {
+      setActionMessage(e.message || "Failed to update role");
     }
   };
 
@@ -124,10 +163,13 @@ export default function AdminDashboardPage() {
     }
   };
 
+  const pendingProperties = properties.filter((p) => p.status === "pending_review");
+  const publishedProperties = properties.filter((p) => p.status !== "pending_review");
+
   return (
     <div className="space-y-6">
       {actionMessage && (
-        <div className="p-4 rounded-2xl bg-teal-50 border border-teal-200 text-teal-900 text-xs flex items-center gap-2">
+        <div className="p-4 rounded-2xl bg-teal-50 border-2 border-teal-300 text-teal-950 text-xs font-bold flex items-center gap-2 shadow-xs">
           <Sparkles className="h-4 w-4 text-teal-600 flex-shrink-0" />
           <span>{actionMessage}</span>
         </div>
@@ -138,25 +180,25 @@ export default function AdminDashboardPage() {
         <div className="p-4 rounded-2xl bg-white border border-slate-200 shadow-subtle">
           <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Total Users</span>
           <span className="text-2xl font-bold text-navy-950 block mt-1">{users.length}</span>
-          <span className="text-[11px] text-teal-700 font-semibold">100% ID-Vetted</span>
+          <span className="text-[11px] text-teal-700 font-semibold">Live Supabase Database</span>
+        </div>
+
+        <div className="p-4 rounded-2xl bg-white border border-slate-200 shadow-subtle">
+          <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Pending Approvals</span>
+          <span className="text-2xl font-bold text-amber-600 block mt-1">{pendingProperties.length}</span>
+          <span className="text-[11px] text-amber-700 font-semibold">Awaiting Verification Review</span>
         </div>
 
         <div className="p-4 rounded-2xl bg-white border border-slate-200 shadow-subtle">
           <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Total Listings</span>
           <span className="text-2xl font-bold text-navy-950 block mt-1">{properties.length}</span>
-          <span className="text-[11px] text-slate-500">Bhopal, Goa, Jaipur, Bengaluru</span>
+          <span className="text-[11px] text-slate-500">Live & Moderation Queue</span>
         </div>
 
         <div className="p-4 rounded-2xl bg-white border border-slate-200 shadow-subtle">
-          <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Active Ledger Volume</span>
+          <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Ledger Volume</span>
           <span className="text-2xl font-bold text-navy-950 block mt-1">{allTransactions.length} txs</span>
-          <span className="text-[11px] text-emerald-700 font-semibold">Double-entry verified</span>
-        </div>
-
-        <div className="p-4 rounded-2xl bg-white border border-slate-200 shadow-subtle">
-          <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Audit Logs</span>
-          <span className="text-2xl font-bold text-navy-950 block mt-1">{auditLogs.length} events</span>
-          <span className="text-[11px] text-rose-700 font-semibold">Security logged</span>
+          <span className="text-[11px] text-emerald-700 font-semibold">Credits Exchange</span>
         </div>
       </div>
 
@@ -164,81 +206,222 @@ export default function AdminDashboardPage() {
       <div className="flex items-center gap-2 border-b border-slate-200 pb-2">
         <button
           onClick={() => setActiveTab("properties")}
-          className={`px-4 py-2 rounded-xl text-xs font-bold transition-all ${
+          className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 ${
             activeTab === "properties" ? "bg-navy-950 text-white shadow-sm" : "bg-white text-slate-600 hover:bg-slate-50"
           }`}
         >
-          Property Moderation Queue
+          <Building className="h-3.5 w-3.5" />
+          <span>Property Moderation Queue</span>
+          {pendingProperties.length > 0 && (
+            <span className="w-5 h-5 rounded-full bg-amber-500 text-white text-[10px] font-bold flex items-center justify-center ml-1">
+              {pendingProperties.length}
+            </span>
+          )}
         </button>
         <button
           onClick={() => setActiveTab("users")}
-          className={`px-4 py-2 rounded-xl text-xs font-bold transition-all ${
+          className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 ${
             activeTab === "users" ? "bg-navy-950 text-white shadow-sm" : "bg-white text-slate-600 hover:bg-slate-50"
           }`}
         >
-          User Registry & Roles
+          <Users className="h-3.5 w-3.5" />
+          <span>User Registry & Roles ({users.length})</span>
         </button>
         <button
           onClick={() => setActiveTab("credits")}
-          className={`px-4 py-2 rounded-xl text-xs font-bold transition-all ${
+          className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 ${
             activeTab === "credits" ? "bg-navy-950 text-white shadow-sm" : "bg-white text-slate-600 hover:bg-slate-50"
           }`}
         >
-          Credit Adjustments & Ledger
+          <Coins className="h-3.5 w-3.5" />
+          <span>Credit Ledger</span>
         </button>
         <button
           onClick={() => setActiveTab("audit")}
-          className={`px-4 py-2 rounded-xl text-xs font-bold transition-all ${
+          className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 ${
             activeTab === "audit" ? "bg-navy-950 text-white shadow-sm" : "bg-white text-slate-600 hover:bg-slate-50"
           }`}
         >
-          Security Audit Trail
+          <History className="h-3.5 w-3.5" />
+          <span>Security Audit</span>
         </button>
       </div>
 
-      {/* TAB 1: PROPERTIES QUEUE */}
+      {/* TAB 1: PROPERTIES MODERATION QUEUE */}
       {activeTab === "properties" && (
-        <div className="rounded-3xl bg-white border border-slate-200/80 shadow-subtle overflow-hidden">
-          <div className="p-5 border-b border-slate-100 flex items-center justify-between">
-            <h3 className="font-bold text-navy-950 text-sm">Listing Approvals & Verification</h3>
-            <span className="text-xs text-slate-400">Reviewing proof of authority and photos</span>
-          </div>
-
-          <div className="divide-y divide-slate-100">
-            {properties.map((p) => (
-              <div key={p.id} className="p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                <div className="flex items-start gap-4">
-                  <img
-                    src={p.images[0]?.image_url}
-                    alt=""
-                    className="h-16 w-24 rounded-xl object-cover bg-slate-100 flex-shrink-0"
-                  />
+        <div className="space-y-6">
+          {/* Section A: Pending Review Homes */}
+          {pendingProperties.length > 0 && (
+            <div className="rounded-3xl bg-amber-50/50 border-2 border-amber-300 shadow-luxury overflow-hidden">
+              <div className="p-5 bg-amber-100/70 border-b border-amber-200 flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Clock className="h-5 w-5 text-amber-700 animate-pulse" />
                   <div>
-                    <h4 className="font-bold text-navy-950 text-sm">{p.title}</h4>
-                    <div className="text-xs text-slate-500">
-                      {p.city}, {p.neighbourhood} • Host ID: {p.host_id}
-                    </div>
-                    <div className="text-xs text-slate-400 mt-1">
-                      {p.bedrooms} Bed • {p.bathrooms} Bath • {p.credits_per_night} pts/night
-                    </div>
+                    <h3 className="font-bold text-navy-950 text-sm">
+                      ⚡ Pending Host Applications ({pendingProperties.length} Listings)
+                    </h3>
+                    <p className="text-xs text-amber-800">
+                      Review ownership proof and photos before approving live host status.
+                    </p>
                   </div>
                 </div>
+                <Badge variant="warning" className="text-xs font-bold uppercase py-0.5">
+                  Action Required
+                </Badge>
+              </div>
 
-                <div className="flex items-center gap-3">
-                  <Badge variant={p.status === "published" ? "success" : "warning"}>
-                    {p.status}
-                  </Badge>
+              <div className="divide-y divide-amber-200/60 p-4 space-y-4">
+                {pendingProperties.map((p) => {
+                  const proofDoc = p.verifications?.[0]?.proof_ref || "Property Ownership / Utility Bill attached";
+                  const docType = p.verifications?.[0]?.verification_type || "utility_bill";
 
-                  {p.status !== "published" ? (
-                    <Button
-                      variant="teal"
-                      size="sm"
-                      onClick={() => handlePropertyDecision(p.id, "published", "Documentation and photo authenticity verified.")}
+                  return (
+                    <div
+                      key={p.id}
+                      className="p-5 rounded-2xl bg-white border border-amber-200/90 shadow-sm flex flex-col lg:flex-row items-start lg:items-center justify-between gap-6"
                     >
-                      <Check className="h-3.5 w-3.5 mr-1" />
-                      Approve & Publish
-                    </Button>
-                  ) : (
+                      <div className="flex flex-col sm:flex-row items-start gap-4 flex-1 min-w-0">
+                        <img
+                          src={p.images?.[0]?.image_url || "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=600"}
+                          alt=""
+                          className="h-28 w-40 rounded-2xl object-cover bg-slate-100 flex-shrink-0 border border-slate-200"
+                        />
+                        <div className="min-w-0 flex-1 space-y-2">
+                          <div className="flex items-center gap-2">
+                            <Badge variant="warning" className="text-[10px] font-bold">
+                              🟡 Pending Review
+                            </Badge>
+                            <span className="text-xs text-slate-400">•</span>
+                            <span className="text-xs text-teal-800 font-bold">
+                              {p.credits_per_night} points/night
+                            </span>
+                          </div>
+
+                          <h4 className="font-bold text-navy-950 text-base leading-snug">
+                            {p.title}
+                          </h4>
+
+                          <p className="text-xs text-slate-500">
+                            📍 {p.exact_address ? `${p.exact_address}, ` : ""}{p.city}, {p.state}
+                          </p>
+
+                          <div className="text-xs text-slate-600 font-medium">
+                            {p.bedrooms} Beds • {p.bathrooms} Baths • Max {p.max_guests} Guests • {p.images?.length || 1} Photos
+                          </div>
+
+                          {/* Host Identity Card */}
+                          <div className="flex items-center gap-2 pt-1">
+                            <UserAvatar src={p.host?.avatar_url} name={p.host?.full_name} size="sm" />
+                            <div className="text-xs">
+                              <span className="font-bold text-navy-950 block">
+                                Host: {p.host?.full_name || "Applicant Host"}
+                              </span>
+                              <span className="text-slate-400 text-[11px]">
+                                {p.host?.email || `Host ID: ${p.host_id}`}
+                              </span>
+                            </div>
+                          </div>
+
+                          {/* Attached Document Card */}
+                          <div className="mt-2 p-3 rounded-xl bg-emerald-50 border border-emerald-300 text-xs flex items-center gap-2.5">
+                            <FileCheck className="h-5 w-5 text-emerald-700 flex-shrink-0" />
+                            <div className="min-w-0 flex-1">
+                              <div className="flex items-center gap-2">
+                                <span className="font-bold text-emerald-950 truncate block">
+                                  {proofDoc}
+                                </span>
+                                <Badge variant="success" className="text-[9px] py-0 px-1.5 flex-shrink-0">
+                                  Proof Attached
+                                </Badge>
+                              </div>
+                              <span className="text-[11px] text-emerald-700 block">
+                                Type: {docType.toUpperCase().replace("_", " ")} • Awaiting Trust Officer Verification
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Action Buttons */}
+                      <div className="flex sm:flex-col items-center gap-2.5 w-full sm:w-auto flex-shrink-0 pt-2 sm:pt-0">
+                        <Button
+                          variant="teal"
+                          size="md"
+                          className="w-full sm:w-44 font-bold shadow-md bg-emerald-600 hover:bg-emerald-700 text-white"
+                          onClick={() =>
+                            handlePropertyDecision(
+                              p.id,
+                              "published",
+                              "Documentation and photo authenticity verified by Trust Officer."
+                            )
+                          }
+                        >
+                          <Check className="h-4 w-4 mr-1.5" />
+                          Approve & Publish Live
+                        </Button>
+
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="w-full sm:w-44 text-rose-600 border-rose-300 hover:bg-rose-50 font-bold"
+                          onClick={() =>
+                            handlePropertyDecision(
+                              p.id,
+                              "rejected",
+                              "Ownership proof document needs clearer photograph or re-upload."
+                            )
+                          }
+                        >
+                          <X className="h-3.5 w-3.5 mr-1" />
+                          Request Re-upload
+                        </Button>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          {/* Section B: Published & Live Listings */}
+          <div className="rounded-3xl bg-white border border-slate-200/80 shadow-subtle overflow-hidden">
+            <div className="p-5 border-b border-slate-100 flex items-center justify-between">
+              <div>
+                <h3 className="font-bold text-navy-950 text-sm">
+                  🟢 Live Active Listings ({publishedProperties.length})
+                </h3>
+                <p className="text-xs text-slate-400">
+                  Properties currently visible and bookable by members on the platform.
+                </p>
+              </div>
+            </div>
+
+            <div className="divide-y divide-slate-100">
+              {publishedProperties.map((p) => (
+                <div key={p.id} className="p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                  <div className="flex items-start gap-4 min-w-0">
+                    <img
+                      src={p.images?.[0]?.image_url || "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=400"}
+                      alt=""
+                      className="h-16 w-24 rounded-xl object-cover bg-slate-100 flex-shrink-0 border border-slate-200"
+                    />
+                    <div className="min-w-0">
+                      <div className="flex items-center gap-2">
+                        <h4 className="font-bold text-navy-950 text-sm truncate">{p.title}</h4>
+                        <Badge variant="success" className="text-[10px]">
+                          Live
+                        </Badge>
+                      </div>
+                      <div className="text-xs text-slate-500 mt-0.5">
+                        {p.city}, {p.neighbourhood || p.state} • {p.credits_per_night} pts/night
+                      </div>
+                      <div className="text-xs text-slate-400 mt-0.5">
+                        Host: {p.host?.full_name || p.host_id}
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-2.5 flex-shrink-0">
                     <Button
                       variant="outline"
                       size="sm"
@@ -247,10 +430,10 @@ export default function AdminDashboardPage() {
                     >
                       Suspend Listing
                     </Button>
-                  )}
+                  </div>
                 </div>
-              </div>
-            ))}
+              ))}
+            </div>
           </div>
         </div>
       )}
@@ -258,8 +441,14 @@ export default function AdminDashboardPage() {
       {/* TAB 2: USERS REGISTRY */}
       {activeTab === "users" && (
         <div className="rounded-3xl bg-white border border-slate-200/80 shadow-subtle overflow-hidden">
-          <div className="p-5 border-b border-slate-100">
-            <h3 className="font-bold text-navy-950 text-sm">Registered Platform Members</h3>
+          <div className="p-5 border-b border-slate-100 flex items-center justify-between">
+            <div>
+              <h3 className="font-bold text-navy-950 text-sm">Registered Platform Members</h3>
+              <p className="text-xs text-slate-400">Live profiles registered in Supabase database</p>
+            </div>
+            <Badge variant="teal" className="text-xs py-1">
+              {users.length} Total Registered
+            </Badge>
           </div>
 
           <div className="overflow-x-auto">
@@ -270,27 +459,45 @@ export default function AdminDashboardPage() {
                   <th className="py-3 px-6">Email</th>
                   <th className="py-3 px-6">City</th>
                   <th className="py-3 px-6">ID Status</th>
-                  <th className="py-3 px-6">Role</th>
+                  <th className="py-3 px-6">Current Role</th>
+                  <th className="py-3 px-6 text-right">Role Action</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
                 {users.map((u) => (
-                  <tr key={u.id} className="hover:bg-slate-50/70">
-                    <td className="py-3.5 px-6 font-bold text-navy-950 flex items-center gap-2">
-                      <img src={u.avatar_url || "https://placehold.co/100"} alt="" className="h-7 w-7 rounded-full object-cover" />
-                      <span>{u.full_name}</span>
+                  <tr key={u.id} className="hover:bg-slate-50/70 transition-colors">
+                    <td className="py-3.5 px-6 font-bold text-navy-950 flex items-center gap-2.5">
+                      <UserAvatar src={u.avatar_url} name={u.full_name} size="sm" />
+                      <span>{u.full_name || "Member"}</span>
                     </td>
                     <td className="py-3.5 px-6 text-slate-500">{u.email}</td>
-                    <td className="py-3.5 px-6 font-semibold">{u.city}</td>
+                    <td className="py-3.5 px-6 font-semibold">{u.city || "India"}</td>
                     <td className="py-3.5 px-6">
                       <Badge variant={u.identity_verified ? "success" : "warning"}>
-                        {u.identity_verified ? "Verified" : "Unverified"}
+                        {u.identity_verified ? "Verified" : "Pending ID"}
                       </Badge>
                     </td>
                     <td className="py-3.5 px-6">
-                      <span className="font-mono uppercase text-[10px] font-bold text-slate-700 bg-slate-100 px-2 py-0.5 rounded">
+                      <span
+                        className={`font-mono uppercase text-[10px] font-bold px-2 py-0.5 rounded ${
+                          u.role === "host"
+                            ? "bg-teal-100 text-teal-800"
+                            : u.role === "admin"
+                            ? "bg-purple-100 text-purple-800"
+                            : "bg-slate-100 text-slate-700"
+                        }`}
+                      >
                         {u.role}
                       </span>
+                    </td>
+                    <td className="py-3.5 px-6 text-right">
+                      <button
+                        type="button"
+                        onClick={() => handleToggleUserRole(u.id, u.role)}
+                        className="text-[11px] font-bold text-teal-700 hover:text-teal-950 underline cursor-pointer"
+                      >
+                        {u.role === "host" ? "Switch to Member" : "Promote to Host"}
+                      </button>
                     </td>
                   </tr>
                 ))}

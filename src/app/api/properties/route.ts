@@ -15,6 +15,10 @@ export async function GET(request: NextRequest) {
     const verifiedOnly = searchParams.get("verifiedOnly") === "true";
     const sort = (searchParams.get("sort") as any) || "relevance";
 
+    const hostId = searchParams.get("hostId") || undefined;
+    const status = searchParams.get("status") || undefined;
+    const admin = searchParams.get("admin") === "true";
+
     const properties = await repository.getProperties({
       city,
       guests,
@@ -22,6 +26,9 @@ export async function GET(request: NextRequest) {
       maxCredits,
       propertyType,
       verifiedOnly,
+      hostId,
+      status,
+      admin,
       sort,
     });
 

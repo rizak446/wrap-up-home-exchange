@@ -17,10 +17,10 @@ export default function MyHomesPage() {
     async function load() {
       if (!currentUser) return;
       try {
-        const res = await fetch("/api/properties");
+        const res = await fetch(`/api/properties?hostId=${currentUser.id}`);
         if (res.ok) {
           const data = await res.json();
-          setHomes((data.properties || []).filter((p: Property) => p.host_id === currentUser.id));
+          setHomes(data.properties || []);
         }
       } catch (e) {
         console.error("Failed to load user homes", e);
@@ -36,7 +36,7 @@ export default function MyHomesPage() {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold text-navy-950 font-serif">My Listed Properties</h1>
-          <p className="text-xs text-slate-500">Manage your residences, verify authority, and review published status.</p>
+          <p className="text-xs text-slate-500">Manage your residences, track verification review, and view live exchange listings.</p>
         </div>
         <Link href="/dashboard/add-home">
           <Button variant="teal" size="md">
@@ -73,13 +73,13 @@ export default function MyHomesPage() {
             >
               <div className="relative aspect-[16/9] w-full bg-slate-100">
                 <img
-                  src={h.images[0]?.image_url}
+                  src={h.images?.[0]?.image_url || "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=1200&auto=format&fit=crop&q=80"}
                   alt={h.title}
                   className="w-full h-full object-cover"
                 />
                 <div className="absolute top-3 left-3">
-                  <Badge variant={h.status === "published" ? "success" : "warning"}>
-                    {h.status.replace("_", " ")}
+                  <Badge variant={h.status === "published" ? "success" : h.status === "pending_review" ? "warning" : "danger"}>
+                    {h.status === "published" ? "Live & Published" : h.status === "pending_review" ? "Under Review" : "Changes Requested"}
                   </Badge>
                 </div>
                 <div className="absolute top-3 right-3">
@@ -94,7 +94,7 @@ export default function MyHomesPage() {
                   <h3 className="font-bold text-navy-950 text-base">{h.title}</h3>
                   <div className="flex items-center gap-1 text-xs text-slate-500 mt-1">
                     <MapPin className="h-3.5 w-3.5 text-teal-600" />
-                    <span>{h.neighbourhood}, {h.city}</span>
+                    <span>{h.neighbourhood || h.city}, {h.city}</span>
                   </div>
                 </div>
 
@@ -102,16 +102,41 @@ export default function MyHomesPage() {
                   {h.bedrooms} Bed • {h.bathrooms} Bath • Max {h.max_guests} Guests
                 </div>
 
+                {h.status === "pending_review" && (
+                  <div className="p-3 rounded-2xl bg-amber-50 border border-amber-200/80 text-[11px] text-amber-900 flex items-start gap-2">
+                    <Clock className="h-4 w-4 text-amber-600 flex-shrink-0 mt-0.5" />
+                    <span>
+                      <strong>Verification in Progress:</strong> Your property details & ownership document are currently being reviewed by our Trust & Safety officer. You will be notified once published live!
+                    </span>
+                  </div>
+                )}
+
                 <div className="pt-3 border-t border-slate-100 flex items-center justify-between">
-                  <span className="text-[11px] text-teal-700 font-semibold">
-                    {h.verification_status === "verified" ? "✓ Verified Property" : "Verification in progress"}
+                  <span className="text-[11px] text-teal-700 font-semibold flex items-center gap-1">
+                    {h.verification_status === "verified" ? (
+                      <>
+                        <CheckCircle2 className="h-3.5 w-3.5 text-teal-600" />
+                        <span>Verified Property</span>
+                      </>
+                    ) : (
+                      <>
+                        <Clock className="h-3.5 w-3.5 text-amber-600" />
+                        <span>Awaiting Verification</span>
+                      </>
+                    )}
                   </span>
-                  <Link href={`/homes/${h.id}`}>
-                    <Button variant="outline" size="sm">
-                      <Eye className="h-3.5 w-3.5 mr-1" />
-                      Public Preview
-                    </Button>
-                  </Link>
+                  {h.status === "published" ? (
+                    <Link href={`/homes/${h.id}`}>
+                      <Button variant="outline" size="sm">
+                        <Eye className="h-3.5 w-3.5 mr-1" />
+                        View Live Listing
+                      </Button>
+                    </Link>
+                  ) : (
+                    <Badge variant="outline" className="text-[10px] text-slate-500">
+                      Pending Approval
+                    </Badge>
+                  )}
                 </div>
               </div>
             </div>
