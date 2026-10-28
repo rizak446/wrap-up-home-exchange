@@ -16,6 +16,7 @@ import {
 import { useAuth } from "@/context/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { UserAvatar } from "@/components/ui/avatar";
 import { Booking } from "@/types";
 
 export default function HostingPage() {
@@ -144,14 +145,15 @@ export default function HostingPage() {
               {/* Guest & Stay Details */}
               <div className="space-y-2">
                 <div className="flex items-center gap-3">
-                  <img
-                    src={b.guest?.avatar_url || "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100"}
-                    alt=""
-                    className="h-10 w-10 rounded-full object-cover ring-2 ring-teal-500"
+                  <UserAvatar
+                    src={b.guest?.avatar_url}
+                    name={b.guest?.full_name}
+                    size="md"
+                    className="ring-2 ring-teal-500"
                   />
                   <div>
                     <h3 className="font-bold text-navy-950 text-sm">
-                      {b.guest?.full_name} ({b.guest?.city})
+                      {b.guest?.full_name || "Guest Member"} {b.guest?.city ? `(${b.guest?.city})` : ""}
                     </h3>
                     <div className="text-xs text-slate-500">
                       Property: <strong>{b.property?.title}</strong>
@@ -181,7 +183,7 @@ export default function HostingPage() {
                   <span className="text-lg font-black text-teal-700">{b.total_credits} pts</span>
                   <Badge
                     variant={
-                      b.status === "confirmed"
+                      ["accepted", "confirmed"].includes(b.status)
                         ? "success"
                         : b.status === "requested"
                         ? "warning"
@@ -190,7 +192,7 @@ export default function HostingPage() {
                         : "default"
                     }
                   >
-                    {b.status}
+                    {b.status === "accepted" ? "Accepted & Confirmed" : b.status === "confirmed" ? "Confirmed" : b.status}
                   </Badge>
                 </div>
 
@@ -219,7 +221,7 @@ export default function HostingPage() {
                   </div>
                 )}
 
-                {b.status === "confirmed" && (
+                {["accepted", "confirmed"].includes(b.status) && (
                   <div className="flex items-center gap-2">
                     <Button
                       variant="teal"

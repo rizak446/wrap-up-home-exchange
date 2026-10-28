@@ -18,17 +18,19 @@ import {
   Clock,
   ExternalLink,
   UserCheck,
+  CalendarCheck,
 } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Property, UserProfile, AuditLog, CreditTransaction } from "@/types";
+import { Property, UserProfile, AuditLog, CreditTransaction, Booking } from "@/types";
 
 export default function AdminDashboardPage() {
   const { currentUser, loginAs } = useAuth();
-  const [activeTab, setActiveTab] = useState<"properties" | "users" | "credits" | "audit">("properties");
+  const [activeTab, setActiveTab] = useState<"properties" | "bookings" | "users" | "credits" | "audit">("properties");
 
   const [properties, setProperties] = useState<Property[]>([]);
+  const [bookings, setBookings] = useState<Booking[]>([]);
   const [users, setUsers] = useState<UserProfile[]>([]);
   const [auditLogs, setAuditLogs] = useState<AuditLog[]>([]);
   const [allTransactions, setAllTransactions] = useState<CreditTransaction[]>([]);
@@ -44,15 +46,21 @@ export default function AdminDashboardPage() {
   const loadData = async () => {
     setIsLoading(true);
     try {
-      const [propsRes, credsRes, usersRes] = await Promise.all([
+      const [propsRes, credsRes, usersRes, bookingsRes] = await Promise.all([
         fetch("/api/properties?admin=true"),
         fetch("/api/credits"),
         fetch("/api/users"),
+        fetch("/api/bookings"),
       ]);
 
       if (propsRes.ok) {
         const data = await propsRes.json();
         setProperties(data.properties || []);
+      }
+
+      if (bookingsRes.ok) {
+        const data = await bookingsRes.json();
+        setBookings(data.bookings || []);
       }
 
       if (credsRes.ok) {
@@ -163,6 +171,54 @@ export default function AdminDashboardPage() {
     }
   };
 
+  const handleBookingDecision = async (booking: Booking, decision: "accept" | "decline") => {
+    setActionMessage(null);
+    try {
+      const res = await fetch(`/api/bookings/${booking.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "respond",
+          hostId: booking.host_id,
+          decision,
+        }),
+      });
+      const data = await res.json();
+      if (res.ok && data.success) {
+        setActionMessage(
+          decision === "accept"
+            ? `✓ Booking for "${booking.property?.title || 'Home'}" accepted & confirmed live!`
+            : `✕ Booking declined & escrow credits returned to guest.`
+        );
+        await loadData();
+      } else {
+        setActionMessage(data.error || "Failed to process booking");
+      }
+    } catch (e: any) {
+      setActionMessage(e.message || "Failed to process booking");
+    }
+  };
+
+  const handleSettleBooking = async (bookingId: string) => {
+    setActionMessage(null);
+    try {
+      const res = await fetch(`/api/bookings/${bookingId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "settle" }),
+      });
+      const data = await res.json();
+      if (res.ok && data.success) {
+        setActionMessage(`✓ Stay completed! ${data.hostEarned} credits transferred to host.`);
+        await loadData();
+      } else {
+        setActionMessage(data.error || "Failed to settle stay");
+      }
+    } catch (e: any) {
+      setActionMessage(e.message || "Failed to settle stay");
+    }
+  };
+
   const pendingProperties = properties.filter((p) => p.status === "pending_review");
   const publishedProperties = properties.filter((p) => p.status !== "pending_review");
 
@@ -215,6 +271,20 @@ export default function AdminDashboardPage() {
           {pendingProperties.length > 0 && (
             <span className="w-5 h-5 rounded-full bg-amber-500 text-white text-[10px] font-bold flex items-center justify-center ml-1">
               {pendingProperties.length}
+            </span>
+          )}
+        </button>
+        <button
+          onClick={() => setActiveTab("bookings")}
+          className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 ${
+            activeTab === "bookings" ? "bg-navy-950 text-white shadow-sm" : "bg-white text-slate-600 hover:bg-slate-50"
+          }`}
+        >
+          <CalendarCheck className="h-3.5 w-3.5" />
+          <span>Bookings Moderation ({bookings.length})</span>
+          {bookings.filter((b) => b.status === "requested").length > 0 && (
+            <span className="w-5 h-5 rounded-full bg-rose-500 text-white text-[10px] font-bold flex items-center justify-center ml-1">
+              {bookings.filter((b) => b.status === "requested").length}
             </span>
           )}
         </button>
@@ -435,6 +505,121 @@ export default function AdminDashboardPage() {
               ))}
             </div>
           </div>
+        </div>
+      )}
+
+      {/* TAB: BOOKINGS & STAYS MODERATION */}
+      {activeTab === "bookings" && (
+        <div className="rounded-3xl bg-white border border-slate-200/80 shadow-subtle overflow-hidden">
+          <div className="p-5 border-b border-slate-100 flex items-center justify-between">
+            <div>
+              <h3 className="font-bold text-navy-950 text-sm">Community Bookings & Stays</h3>
+              <p className="text-xs text-slate-400">Review stay requests, confirm reservations, or settle escrow points</p>
+            </div>
+            <Badge variant="teal" className="text-xs py-1">
+              {bookings.length} Total Reservations
+            </Badge>
+          </div>
+
+          {bookings.length === 0 ? (
+            <div className="p-12 text-center text-xs text-slate-500">
+              No booking reservations recorded yet.
+            </div>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full text-left text-xs">
+                <thead className="bg-slate-50 text-slate-500 font-bold uppercase text-[10px]">
+                  <tr>
+                    <th className="py-3 px-5">Guest</th>
+                    <th className="py-3 px-5">Host & Home</th>
+                    <th className="py-3 px-5">Dates</th>
+                    <th className="py-3 px-5">Credits</th>
+                    <th className="py-3 px-5">Status</th>
+                    <th className="py-3 px-5 text-right">Admin Actions</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100">
+                  {bookings.map((b) => (
+                    <tr key={b.id} className="hover:bg-slate-50/70 transition-colors">
+                      <td className="py-3.5 px-5">
+                        <div className="flex items-center gap-2">
+                          <UserAvatar src={b.guest?.avatar_url} name={b.guest?.full_name} size="sm" />
+                          <div>
+                            <div className="font-bold text-navy-950">{b.guest?.full_name || "Guest Member"}</div>
+                            <div className="text-[10px] text-slate-400">{b.guest?.email || "guest@havenswap.com"}</div>
+                          </div>
+                        </div>
+                      </td>
+                      <td className="py-3.5 px-5">
+                        <div className="font-bold text-navy-950">{b.property?.title || "Property"}</div>
+                        <div className="text-[10px] text-slate-500">Host: {b.host?.full_name || "Nancy"} ({b.property?.city || "India"})</div>
+                      </td>
+                      <td className="py-3.5 px-5">
+                        <div className="font-semibold text-slate-700">{b.check_in} &rarr; {b.check_out}</div>
+                        <div className="text-[10px] text-slate-400">{b.nights} nights • {b.guest_count} guests</div>
+                      </td>
+                      <td className="py-3.5 px-5 font-black text-teal-700">
+                        {b.total_credits} pts
+                      </td>
+                      <td className="py-3.5 px-5">
+                        <Badge
+                          variant={
+                            ["accepted", "confirmed"].includes(b.status)
+                              ? "success"
+                              : b.status === "requested"
+                              ? "warning"
+                              : b.status === "completed"
+                              ? "teal"
+                              : "default"
+                          }
+                        >
+                          {b.status === "accepted" ? "Accepted" : b.status === "confirmed" ? "Confirmed" : b.status}
+                        </Badge>
+                      </td>
+                      <td className="py-3.5 px-5 text-right">
+                        {b.status === "requested" && (
+                          <div className="flex items-center justify-end gap-1.5">
+                            <Button
+                              variant="teal"
+                              size="sm"
+                              className="text-xs py-1 px-2.5 h-auto"
+                              onClick={() => handleBookingDecision(b, "accept")}
+                            >
+                              <Check className="h-3 w-3 mr-1" />
+                              Accept Stay
+                            </Button>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="text-xs py-1 px-2.5 h-auto text-rose-600 border-rose-200 hover:bg-rose-50"
+                              onClick={() => handleBookingDecision(b, "decline")}
+                            >
+                              <X className="h-3 w-3 mr-1" />
+                              Decline
+                            </Button>
+                          </div>
+                        )}
+                        {["accepted", "confirmed"].includes(b.status) && (
+                          <Button
+                            variant="teal"
+                            size="sm"
+                            className="text-xs py-1 px-2.5 h-auto"
+                            onClick={() => handleSettleBooking(b.id)}
+                          >
+                            <Sparkles className="h-3 w-3 mr-1" />
+                            Settle Credits
+                          </Button>
+                        )}
+                        {b.status === "completed" && (
+                          <span className="text-[10px] font-bold text-emerald-700">✓ Settled</span>
+                        )}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
         </div>
       )}
 

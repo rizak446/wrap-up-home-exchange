@@ -20,6 +20,7 @@ import { useAuth } from "@/context/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Modal } from "@/components/ui/modal";
+import { UserAvatar } from "@/components/ui/avatar";
 import { Booking } from "@/types";
 
 export default function MyTripsPage() {
@@ -158,7 +159,7 @@ export default function MyTripsPage() {
       ) : (
         <div className="space-y-6">
           {trips.map((trip) => {
-            const isConfirmed = ["confirmed", "completed"].includes(trip.status);
+            const isConfirmed = ["accepted", "confirmed", "completed"].includes(trip.status);
             const coverImage =
               trip.property?.images?.[0]?.image_url ||
               "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=1200&auto=format&fit=crop&q=80";
@@ -178,7 +179,7 @@ export default function MyTripsPage() {
                   <div className="absolute top-3 left-3">
                     <Badge
                       variant={
-                        trip.status === "confirmed"
+                        ["accepted", "confirmed"].includes(trip.status)
                           ? "success"
                           : trip.status === "completed"
                           ? "teal"
@@ -187,7 +188,7 @@ export default function MyTripsPage() {
                           : "default"
                       }
                     >
-                      {trip.status === "requested" ? "Awaiting Host" : trip.status}
+                      {trip.status === "requested" ? "Awaiting Host" : trip.status === "accepted" ? "Accepted & Confirmed" : trip.status}
                     </Badge>
                   </div>
                 </div>
@@ -215,10 +216,11 @@ export default function MyTripsPage() {
                     {/* Host Profile Info */}
                     <div className="flex items-center gap-2 pt-1 pb-1">
                       <span className="text-xs text-slate-500 font-medium">Host:</span>
-                      <img
-                        src={trip.host?.avatar_url || "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100"}
-                        alt=""
-                        className="h-5 w-5 rounded-full object-cover ring-1 ring-teal-500"
+                      <UserAvatar
+                        src={trip.host?.avatar_url}
+                        name={trip.host?.full_name}
+                        size="sm"
+                        className="ring-1 ring-teal-500"
                       />
                       <span className="text-xs font-bold text-navy-950">{trip.host?.full_name || "Nancy (Exchange Host)"}</span>
                       <span className="text-[11px] text-slate-400">({trip.property?.city || "India"})</span>

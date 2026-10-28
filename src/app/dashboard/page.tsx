@@ -70,7 +70,7 @@ export default function DashboardOverviewPage() {
   }, [currentUser]);
 
   const pendingHostingRequests = hostingBookings.filter((b) => b.status === "requested");
-  const upcomingTrips = tripBookings.filter((b) => ["requested", "confirmed"].includes(b.status));
+  const upcomingTrips = tripBookings.filter((b) => ["requested", "accepted", "confirmed"].includes(b.status));
 
   return (
     <div className="space-y-8">
@@ -236,8 +236,16 @@ export default function DashboardOverviewPage() {
 
                   <div className="flex items-center gap-3">
                     <span className="font-extrabold text-teal-700">{b.total_credits} pts</span>
-                    <Badge variant={b.status === "requested" ? "warning" : b.status === "confirmed" ? "success" : "default"}>
-                      {b.status}
+                    <Badge
+                      variant={
+                        ["accepted", "confirmed"].includes(b.status)
+                          ? "success"
+                          : b.status === "requested"
+                          ? "warning"
+                          : "default"
+                      }
+                    >
+                      {b.status === "accepted" ? "Accepted" : b.status === "confirmed" ? "Confirmed" : b.status}
                     </Badge>
                   </div>
                 </div>

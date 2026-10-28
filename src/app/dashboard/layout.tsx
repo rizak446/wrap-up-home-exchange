@@ -105,6 +105,28 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
       {/* Main Dashboard Workspace */}
       <main className="flex-1 p-4 sm:p-6 lg:p-8 overflow-y-auto max-w-6xl mx-auto w-full">
+        {/* Mobile Quick-Navigation Ribbon */}
+        <div className="md:hidden mb-5 -mx-2 px-2 overflow-x-auto pb-2 scrollbar-none flex items-center gap-1.5 border-b border-slate-200/70">
+          {links.map((item) => {
+            const Icon = item.icon;
+            const isActive = pathname === item.href;
+            return (
+              <Link
+                key={item.href}
+                href={item.href}
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition-all flex-shrink-0 ${
+                  isActive
+                    ? "bg-teal-700 text-white font-bold shadow-sm"
+                    : "bg-white text-slate-700 border border-slate-200/80 hover:bg-slate-50"
+                }`}
+              >
+                <Icon className={`h-3.5 w-3.5 ${isActive ? "text-white" : "text-teal-600"}`} />
+                <span>{item.label}</span>
+              </Link>
+            );
+          })}
+        </div>
+
         {children}
       </main>
     </div>
